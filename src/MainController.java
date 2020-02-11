@@ -76,9 +76,10 @@ public class MainController {
 
     @FXML
     public void logout(ActionEvent click){
-        if(!clientConnection.my_logout())
+        if(!clientConnection.my_logout()) {
             feedback.showAlert(Alert.AlertType.ERROR, "Logout Error", clientConnection.getMsgAlert());
-        stage.close();
+            stage.close();
+        }
     }
 
     @FXML

@@ -44,10 +44,11 @@ public class LogController {
             feedback.showAlert(Alert.AlertType.ERROR, "Sign-up Error", msg);
             message.setText("Close and reopen the application");
         }
-        else
+        else if(!clientConnection.getAdditionalMsg().equals("")){
             message.setText("Now Login");
+        }
         try{
-            Thread.sleep(4000);
+            Thread.sleep(3000);
             message.setText("");
             nickname.clear();
             password.clear();
