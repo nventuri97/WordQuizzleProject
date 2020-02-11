@@ -1,3 +1,4 @@
+import java.net.Socket;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -9,6 +10,7 @@ public class User {
     private int punteggio;
     private transient boolean online;
     private transient boolean busy;
+    private transient Socket TCPSocket;
 
     /**
      * Costruttore con parametri
@@ -96,5 +98,13 @@ public class User {
      */
     public void setFriends(Set<String> friends){
         this.friends=friends;
+    }
+
+    public void setTCPSocket(Socket socket){
+        this.TCPSocket=socket;
+    }
+
+    public Socket getTCPSocket(){
+        return TCPSocket;
     }
 }
