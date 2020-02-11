@@ -1,0 +1,54 @@
+#AnchorPane {
+    -fx-background-image: url("./sfondo.JPG");
+}
+
+#AnchorPane2 {
+    -fx-background-image: url("./background.JPG");
+}
+
+#logo2 {
+    -fx-background-image: url("./logo2.PNG");
+}
+
+#logo3 {
+    -fx-background-image: url("./logo3.PNG");
+}
+
+#add_friend, #login, #sign_up, #new_game, #friends, #score, #ranking, #logout, #clear {
+    -fx-background-color: rgb(255, 255, 255);
+    -fx-background-radius: 50px;
+    -fx-size: (150,26);
+}
+
+#add_friend:hover, #login:hover, #sign_up:hover, #add_friend:hover, #new_game:hover, #friends:hover, #score:hover, #ranking:hover, #logout:hover, #clear:hover {
+    -fx-box-shadow: 0 9px #999;
+}
+
+#add_friend:active, #login:active, #sign_up:active, #add_friend:active, #new_game:active, #friends:active, #score:active, #ranking:active, #logout:active, #clear:active {
+    -fx-box-shadow: 0 5px #666;
+    -fx-transform: translateY(4px);
+}
+
+#nickname, #password, #friend{
+    -fx-background-radius: 50px;
+    -fx-prompt-text-align: center;
+    -fx-text-align: center
+}
+
+#message {
+    -fx-text-align: center;
+    -fx-text-style: Arial;
+    -fx-text-width: 15px;
+    -fx-text-color: red;
+}
+
+#list {
+    -fx-background-radius: 20px;
+}
+
+#lblscore {
+    -fx-text-align: center;
+    -fx-text-style: Arial;
+    -fx-text-width: 15px;
+    -fx-text-color: red;
+}
