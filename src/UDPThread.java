@@ -1,18 +1,19 @@
+import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Optional;
+import java.util.Timer;
 
 public class UDPThread extends Thread {
     private static int UDPport;
     private static DatagramSocket UDPSock;
     private static boolean running;
     private static boolean working;
+    private static String answer;
 
     public UDPThread(int port){
         this.UDPport=port;
@@ -45,22 +46,26 @@ public class UDPThread extends Thread {
             //Ricostruisco la stringa inviata dal thread dell'utente che chiede la partita
             String source=new String(packet.getData());
             String[] substring=source.split("\\s+");
-            Alert notify=new Alert(Alert.AlertType.INFORMATION);
-            notify.setTitle("Challenge request");
-            notify.setHeaderText(substring[3]+" ask you to join a new match");
-            notify.setContentText("Answer accept/deny: ");
-            ButtonType accept = new ButtonType("Accept");
-            ButtonType deny = new ButtonType("Deny");
+            Runnable notifier=new Runnable() {
+                @Override
+                public void run() {
+                    Alert notify=new Alert(Alert.AlertType.INFORMATION);
+                    notify.setTitle("Challenge request");
+                    notify.setHeaderText(substring[3]+" ask you to join a new match");
+                    notify.setContentText("Answer accept/deny: ");
+                    ButtonType accept = new ButtonType("Accept");
+                    ButtonType deny = new ButtonType("Deny");
 
-            notify.getButtonTypes().setAll(accept,deny);
-            Optional<ButtonType> result = notify.showAndWait();
-            String answer;
-            if(result.get()==accept){
-                answer="yes";
-            } else
-                answer="no";
+                    notify.getButtonTypes().setAll(accept,deny);
+                    Optional<ButtonType> result = notify.showAndWait();
 
-
+                    if(result.get()==accept){
+                        answer="yes";
+                    } else
+                        answer="no";
+                }
+            };
+            Platform.runLater(notifier);
             //Costruisco il messaggio di risposta da inviare via datagrampacket
             InetAddress friend=packet.getAddress();
             int frport=packet.getPort();

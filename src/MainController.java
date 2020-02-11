@@ -88,7 +88,8 @@ public class MainController {
         lblscore.setText("Your score is "+msg);
     }
 
-    public void new_game(ActionEvent click){
+    @FXML
+    public void newGame(ActionEvent click){
         String nickFriend=friend.getText();
         clientConnection.newGame(nickFriend);
         msg=clientConnection.getAdditionalMsg();
@@ -99,5 +100,6 @@ public class MainController {
     public void clean(ActionEvent click){
         list.getItems().clear();
         friend.clear();
+        lblscore.setText("");
     }
 }
