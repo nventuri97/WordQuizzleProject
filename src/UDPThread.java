@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Optional;
 import java.util.Timer;
+import java.util.TimerTask;
 
 public class UDPThread extends Thread {
     private static int UDPport;
@@ -46,7 +47,8 @@ public class UDPThread extends Thread {
             //Ricostruisco la stringa inviata dal thread dell'utente che chiede la partita
             String source=new String(packet.getData());
             String[] substring=source.split("\\s+");
-            Runnable notifier=new Runnable() {
+            Timer timer=new Timer();
+            Runnable notifier=new Runnable(){
                 @Override
                 public void run() {
                     Alert notify=new Alert(Alert.AlertType.INFORMATION);
@@ -65,6 +67,8 @@ public class UDPThread extends Thread {
                         answer="no";
                 }
             };
+            timer.schedule((TimerTask) notifier, 30000);
+            System.out.println(answer);
             Platform.runLater(notifier);
             //Costruisco il messaggio di risposta da inviare via datagrampacket
             InetAddress friend=packet.getAddress();
