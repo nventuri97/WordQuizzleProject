@@ -48,6 +48,7 @@ public class UDPThread extends Thread {
             String source=new String(packet.getData());
             String[] substring=source.split("\\s+");
             Timer timer=new Timer();
+
             Runnable notifier=new Runnable(){
                 @Override
                 public void run() {
@@ -65,14 +66,26 @@ public class UDPThread extends Thread {
                         answer="yes";
                     } else
                         answer="no";
+
+                    Thread t=new Thread(()->{
+                        try{
+                            Thread.sleep(30000);
+                        }catch(InterruptedException ie){
+                            ie.printStackTrace();
+                        }
+                        if(notify.isShowing()) {
+                            notify.close();
+                            answer="no";
+                        }
+                    });
                 }
             };
-            timer.schedule((TimerTask) notifier, 30000);
-            System.out.println(answer);
             Platform.runLater(notifier);
+            System.out.println(answer);
             //Costruisco il messaggio di risposta da inviare via datagrampacket
             InetAddress friend=packet.getAddress();
             int frport=packet.getPort();
+            System.out.println(frport);
             byte[] data=answer.getBytes();
             DatagramPacket response=new DatagramPacket(data, data.length, friend, frport);
             response.setData(data);
