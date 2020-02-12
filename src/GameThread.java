@@ -16,11 +16,14 @@ public class GameThread extends Thread {
     private Gson gson;
     private FileReader reader;
     private Socket sock1, sock2;
+    private HashMap<String, String> translation;
 
     public GameThread(Database db, String nick1, String nick2){
+        this.k=(int) (Math.random()*11)+1;
         this.database=db;
         this.gamer1=nick1;
         this.gamer2=nick2;
+        this.translation=new HashMap<>(k);
         this.gson=new Gson();
         try {
             this.reader = new FileReader("./src/dizionario.json");
@@ -34,16 +37,13 @@ public class GameThread extends Thread {
     @Override
     public void run(){
         //al massimo faccio tradurre 20 parole
-        k=(int) (Math.random()*11)+1;
         ArrayList<String> dictionary=gson.fromJson(reader, ArrayList.class);
-        ArrayList<String> kparole=new ArrayList<>(k);
-        kparole=getKWord(dictionary, k);
-        HashMap<String, String> traslation=new HashMap<>(k);
-        if(getTranslation(traslation,kparole,k)){
+        ArrayList<String> kparole=getKWord(dictionary, k);
+        if(getTranslation(translation,kparole,k)){
             User us1=database.getUser(gamer1);
             User us2=database.getUser(gamer2);
-            int pt1=game(us1, sock1, traslation, k);
-            int pt2=game(us2, sock2, traslation, k);
+            int pt1=game(us1, sock1);
+            int pt2=game(us2, sock2);
             if(pt1>pt2){
                 sendMessage("You won "+pt1+" to "+pt2+" Receive 3 bonus point",sock1);
                 sendMessage("You lose "+pt1+" to "+pt2,sock2);
@@ -114,7 +114,7 @@ public class GameThread extends Thread {
         return null;
     }
 
-    public int game(User user, Socket sock, HashMap<String, String> translation, int k){
+    public int game(User user, Socket sock){
         int punti=user.getPunteggio();
         String original,transl;
         for(Map.Entry<String,String> entry: translation.entrySet()){
