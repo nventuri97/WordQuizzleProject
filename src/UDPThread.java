@@ -1,20 +1,20 @@
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+
+import javax.xml.crypto.Data;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Optional;
 import java.util.Timer;
-import java.util.TimerTask;
 
 public class UDPThread extends Thread {
     private static int UDPport;
     private static DatagramSocket UDPSock;
     private static boolean running;
-    private static boolean working;
-    private static String answer;
+    private static DatagramPacket packet;
 
     public UDPThread(int port){
         this.UDPport=port;
@@ -23,7 +23,6 @@ public class UDPThread extends Thread {
         }catch (SocketException se){
             se.printStackTrace();
         }
-        this.working=false;
         this.running=true;
     }
 
@@ -32,7 +31,7 @@ public class UDPThread extends Thread {
         BufferedReader reader=new BufferedReader(new InputStreamReader(System.in));
         while(running){
             byte[] request=new byte[1024];
-            DatagramPacket packet=new DatagramPacket(request, 1024);
+            packet=new DatagramPacket(request, 1024);
             try {
                 UDPSock.setSoTimeout(2000);
                 UDPSock.receive(packet);
@@ -63,9 +62,9 @@ public class UDPThread extends Thread {
                     Optional<ButtonType> result = notify.showAndWait();
 
                     if(result.get()==accept){
-                        answer="yes";
+                        setResponse("yes");
                     } else
-                        answer="no";
+                        setResponse("no");
 
                     Thread t=new Thread(()->{
                         try{
@@ -75,25 +74,13 @@ public class UDPThread extends Thread {
                         }
                         if(notify.isShowing()) {
                             notify.close();
-                            answer="no";
+                            setResponse("no");
                         }
                     });
                 }
             };
             Platform.runLater(notifier);
-            System.out.println(answer);
             //Costruisco il messaggio di risposta da inviare via datagrampacket
-            InetAddress friend=packet.getAddress();
-            int frport=packet.getPort();
-            System.out.println(frport);
-            byte[] data=answer.getBytes();
-            DatagramPacket response=new DatagramPacket(data, data.length, friend, frport);
-            response.setData(data);
-            try {
-                UDPSock.send(response);
-            }catch (IOException ioe){
-                ioe.printStackTrace();
-            }
         }
     }
 
@@ -101,9 +88,17 @@ public class UDPThread extends Thread {
         running=false;
     }
 
-    public static synchronized void setFlag(){working=true;}
-
-    public static synchronized boolean isWorking(){
-        return working;
+    public static synchronized void setResponse(String s){
+        InetAddress friend=packet.getAddress();
+        int frport=packet.getPort();
+        System.out.println(frport);
+        byte[] data=s.getBytes();
+        DatagramPacket response=new DatagramPacket(data, data.length, friend, frport);
+        response.setData(data);
+        try {
+            UDPSock.send(response);
+        }catch (IOException ioe){
+            ioe.printStackTrace();
+        }
     }
 }
