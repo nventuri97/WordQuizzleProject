@@ -1,20 +1,19 @@
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-
-import javax.xml.crypto.Data;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Optional;
-import java.util.Timer;
 
 public class UDPThread extends Thread {
     private static int UDPport;
     private static DatagramSocket UDPSock;
     private static boolean running;
     private static DatagramPacket packet;
+    private static int frport;
+    private static InetAddress friend;
 
     public UDPThread(int port){
         this.UDPport=port;
@@ -46,9 +45,10 @@ public class UDPThread extends Thread {
             //Ricostruisco la stringa inviata dal thread dell'utente che chiede la partita
             String source=new String(packet.getData());
             String[] substring=source.split("\\s+");
-            Timer timer=new Timer();
+            frport=packet.getPort();
+            friend = packet.getAddress();
 
-            Runnable notifier=new Runnable(){
+            Platform.runLater(new Runnable() {
                 @Override
                 public void run() {
                     Alert notify=new Alert(Alert.AlertType.INFORMATION);
@@ -78,8 +78,7 @@ public class UDPThread extends Thread {
                         }
                     });
                 }
-            };
-            Platform.runLater(notifier);
+            });
             //Costruisco il messaggio di risposta da inviare via datagrampacket
         }
     }
@@ -89,16 +88,17 @@ public class UDPThread extends Thread {
     }
 
     public static synchronized void setResponse(String s){
-        InetAddress friend=packet.getAddress();
-        int frport=packet.getPort();
-        System.out.println(frport);
-        byte[] data=s.getBytes();
-        DatagramPacket response=new DatagramPacket(data, data.length, friend, frport);
-        response.setData(data);
-        try {
-            UDPSock.send(response);
-        }catch (IOException ioe){
-            ioe.printStackTrace();
+        if(s!=null) {
+            byte[] data = s.getBytes();
+            System.out.println(new String(data));
+            System.out.println(frport);
+            DatagramPacket response = new DatagramPacket(data, data.length, friend, frport);
+            response.setData(data);
+            try {
+                UDPSock.send(response);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
         }
     }
 }

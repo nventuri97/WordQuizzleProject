@@ -1,4 +1,5 @@
 import java.io.Serializable;
+import java.net.Socket;
 import java.rmi.RemoteException;
 import java.rmi.server.RemoteServer;
 import java.util.*;
@@ -175,5 +176,15 @@ public class Database extends RemoteServer implements DatabaseInterface, Seriali
     public boolean userBusy(String nickname){
         User us=database.get(nickname);
         return us.isBusy();
+    }
+
+    public void setSocket(String nickname, Socket socket){
+        User us=database.get(nickname);
+        us.setTCPSocket(socket);
+    }
+
+    public Socket getSocket(String nickname){
+        User us=database.get(nickname);
+        return us.getTCPSocket();
     }
 }

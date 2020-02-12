@@ -38,6 +38,7 @@ public class UserThread extends Thread {
                     case "LOGIN":
                         login(substring[1],substring[2]);
                         nickname=substring[1];
+                        db.setSocket(nickname, clientSock);
                         saveUDP();
                         break;
                     case "LOGOUT":
@@ -156,6 +157,7 @@ public class UserThread extends Thread {
                 DatagramPacket packet = new DatagramPacket(request, request.length, address, port);
                 packet.setData(request);
                 reqSocket.send(packet);
+                System.out.println(reqSocket.getLocalPort());
 
                 //aspetto la risposta dell'amico
                 byte[] response = new byte[1024];
@@ -164,14 +166,18 @@ public class UserThread extends Thread {
                 try {
                     reqSocket.setSoTimeout(30000);
                     reqSocket.receive(resp_packet);
+                    String answer=new String(resp_packet.getData());
+                    System.out.println(answer);
+                    if(answer.contains("yes")) {
+                        sentResponse("Game accepted, it's starting");
+                        GameThread gt=new GameThread(db, nickname, friend_nick);
+                        gt.start();
+                    } else
+                        sentResponse("Game denied");
                 } catch (SocketTimeoutException ste) {
                     sentResponse("Game denied");
                 }
-                String answer=new String(resp_packet.getData());
-                if(answer.equals("yes"))
-                    sentResponse("Game accepted, it's starting");
-                else
-                    sentResponse("Game denied");
+
             } catch (IOException ioe) {
                 ioe.printStackTrace();
             }

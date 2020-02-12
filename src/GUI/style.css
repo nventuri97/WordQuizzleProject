@@ -1,4 +1,4 @@
-#AnchorPane {
+#AnchorPane, #AnchorPane3 {
     -fx-background-image: url("./sfondo.JPG");
 }
 
@@ -6,7 +6,7 @@
     -fx-background-image: url("./background.JPG");
 }
 
-#logo2 {
+#logo2, #logo4{
     -fx-background-image: url("./logo2.PNG");
 }
 
@@ -14,14 +14,15 @@
     -fx-background-image: url("./logo3.PNG");
 }
 
-#add_friend, #login, #sign_up, #new_game, #friends, #score, #ranking, #logout, #clear {
+#add_friend, #login, #sign_up, #new_game, #friends, #score, #ranking, #logout, #clear, #sendWord {
     -fx-background-color: rgb(255, 255, 255);
     -fx-background-radius: 50px;
     -fx-font-family: Ranchers;
     -fx-font-size: 15px;
+    -fx-text-fill: rgb(78, 77, 77);
 }
 
-#nickname, #password, #friend{
+#nickname, #password, #friend, #wordfield{
     -fx-background-radius: 50px;
     -fx-prompt-text-align: center;
     -fx-text-align: center;
@@ -29,8 +30,8 @@
     -fx-font-size: 15px;
 }
 
-#message {
-    -fx-text-align: center;
+#message, #lblscore{
+    -fx-text-alignment: center;
     -fx-font-family: Ranchers;
     -fx-font-size: 15px;
     -fx-text-fill: red;
@@ -42,9 +43,9 @@
     -fx-font-size: 15px;
 }
 
-#lblscore {
-    -fx-text-align: center;
+ #lblword {
+    -fx-text-alignment: center;
     -fx-font-family: Ranchers;
-    -fx-font-size: 15px;
+    -fx-font-size: 35px;
     -fx-text-fill: red;
 }

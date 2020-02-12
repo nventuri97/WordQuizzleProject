@@ -13,7 +13,7 @@ public class Server {
 
     public static void main(String args[]){
         //Creo o recupero l'istanza dell'oggetto remoto così da permettere al client la registrazione
-        File db=new File("backup.json");
+        File db=new File("./backup.json");
         Database database;
         Parser parser=new Parser();
         if(db.exists())

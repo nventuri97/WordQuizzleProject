@@ -5,16 +5,32 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
 
 <AnchorPane fx:id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="800.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LogController">
    <children>
       <AnchorPane layoutX="190.0" layoutY="250.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="250.0" prefWidth="421.0" stylesheets="@style.css">
          <children>
-            <TextField fx:id="nickname" alignment="CENTER" layoutX="48.0" layoutY="54.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="26.0" prefWidth="325.0" promptText="Username" />
-            <PasswordField fx:id="password" alignment="CENTER" layoutX="48.0" layoutY="114.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="26.0" prefWidth="325.0" promptText="Password" />
-            <Button fx:id="sign_up" layoutX="48.0" layoutY="170.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#sign_up" prefHeight="26.0" prefWidth="150.0" stylesheets="@style.css" text="Sign up" />
-            <Button fx:id="login" layoutX="223.0" layoutY="170.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#login" prefHeight="26.0" prefWidth="150.0" text="Login" />
-            <Label fx:id="message" layoutX="83.0" layoutY="203.0" prefHeight="33.0" prefWidth="256.0" />
+            <TextField fx:id="nickname" alignment="CENTER" layoutX="48.0" layoutY="54.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="26.0" prefWidth="325.0" promptText="Username">
+               <font>
+                  <Font name="Ranchers" size="15.0" />
+               </font></TextField>
+            <PasswordField fx:id="password" alignment="CENTER" layoutX="48.0" layoutY="114.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="26.0" prefWidth="325.0" promptText="Password">
+               <font>
+                  <Font name="Ranchers" size="15.0" />
+               </font></PasswordField>
+            <Button fx:id="sign_up" layoutX="48.0" layoutY="170.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#sign_up" prefHeight="26.0" prefWidth="150.0" stylesheets="@style.css" text="SIGN UP">
+               <font>
+                  <Font name="Ranchers" size="15.0" />
+               </font></Button>
+            <Button fx:id="login" layoutX="223.0" layoutY="170.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#login" prefHeight="26.0" prefWidth="150.0" text="LOGIN">
+               <font>
+                  <Font name="Ranchers" size="15.0" />
+               </font></Button>
+            <Label fx:id="message" layoutX="83.0" layoutY="203.0" prefHeight="33.0" prefWidth="256.0">
+               <font>
+                  <Font name="Ranchers" size="15.0" />
+               </font></Label>
          </children>
       </AnchorPane>
       <AnchorPane fx:id="logo3" layoutX="214.0" layoutY="67.0" prefHeight="213.0" prefWidth="346.0" />

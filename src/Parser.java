@@ -34,10 +34,10 @@ public class Parser {
      * Ripristina il database da una precedente versione salvata nel file JSON
      * @return database salvato precedentemente
      */
-    public static Database restoreDB(){
+    public synchronized static Database restoreDB(){
         FileReader reader=null;
         try {
-            reader= new FileReader("backup.json");
+            reader= new FileReader("./backup.json");
         }catch (IOException fe){
             fe.printStackTrace();
         }

@@ -14,6 +14,7 @@ public class GameThread extends Thread {
     private int k;
     private Gson gson;
     private FileReader reader;
+    private Socket sock1, sock2;
 
     public GameThread(Database db, String nick1, String nick2){
         this.database=db;
@@ -21,20 +22,25 @@ public class GameThread extends Thread {
         this.gamer2=nick2;
         this.gson=new Gson();
         try {
-            this.reader = new FileReader("dizionario.json");
+            this.reader = new FileReader("./src/dizionario.json");
         }catch(FileNotFoundException fe){
             fe.printStackTrace();
         }
+        sock1=db.getSocket(gamer1);
+        sock2=db.getSocket(gamer2);
     }
 
     @Override
     public void run(){
         //al massimo faccio tradurre 20 parole
-        k=(int) (Math.random()*19)+1;
+        k=(int) (Math.random()*11)+1;
         ArrayList<String> dictionary=gson.fromJson(reader, ArrayList.class);
         ArrayList<String> kparole=new ArrayList<>(k);
         kparole=getKWord(dictionary, k);
         HashMap<String, String> traslation=new HashMap<>(k);
+        if(getTranslation(traslation,kparole,k)){
+
+        }
     }
 
     public ArrayList<String> getKWord(ArrayList<String> dic, int k){
@@ -48,7 +54,7 @@ public class GameThread extends Thread {
         return s;
     }
 
-    public void getTranslation(HashMap<String, String> t, ArrayList<String> kparole, int k){
+    public boolean getTranslation(HashMap<String, String> t, ArrayList<String> kparole, int k){
         for(int i=0;i<k;i++) {
             try {
                 String word=kparole.get(i);
@@ -56,14 +62,20 @@ public class GameThread extends Thread {
                 HttpURLConnection connection=(HttpURLConnection) site.openConnection();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 String translation=reader.readLine();
-                t.put(word, translation);
+                if(connection.getResponseCode()!=200){
+                    sendMessage("Something is gone wrong, we are sorry", sock1);
+                    sendMessage("Something is gone wrong, we are sorry", sock2);
+                    return false;
+                }else
+                    t.put(word, translation);
             }catch(Exception e){
                 e.printStackTrace();
             }
         }
+        return true;
     }
 
-    public void sendRequest(String request, Socket socket){
+    public void sendMessage(String request, Socket socket){
         try {
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             writer.write(request);

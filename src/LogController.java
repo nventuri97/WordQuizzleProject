@@ -68,8 +68,10 @@ public class LogController {
             feedback.showAlert(Alert.AlertType.ERROR, "Login Error", msg);
             if(i==3)
                 message.setText("You've finished your chances");
-            else
-                message.setText("You have "+(3-i)+" chances");
+            else {
+                message.setText("You have " + (3 - i) + " chances");
+                i++;
+            }
             password.clear();
             nickname.clear();
         } else {

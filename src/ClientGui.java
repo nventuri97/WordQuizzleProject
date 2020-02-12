@@ -2,6 +2,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class ClientGui extends Application {
@@ -26,10 +27,11 @@ public class ClientGui extends Application {
         logController.setFeedback(feedback);
 
         //Log window
-        stage.setTitle("WORD CLIENT");
+        stage.setTitle("WORD QUIZZLE");
         stage.setResizable(false);
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
+        stage.getIcons().add(new Image("./GUI/lg.png"));
         stage.setScene(scene);
         stage.show();
     }
