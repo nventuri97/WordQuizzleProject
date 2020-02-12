@@ -160,6 +160,10 @@ public class Database extends RemoteServer implements DatabaseInterface, Seriali
         return jsonString;
     }
 
+    public synchronized User getUser(String nickname){
+        return database.get(nickname);
+    }
+
     public synchronized void setUDPmap(String nickname, int port){
         UDPmap.put(nickname, port);
     }
