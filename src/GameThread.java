@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class GameThread extends Thread {
     private Database database;
@@ -39,7 +40,24 @@ public class GameThread extends Thread {
         kparole=getKWord(dictionary, k);
         HashMap<String, String> traslation=new HashMap<>(k);
         if(getTranslation(traslation,kparole,k)){
-
+            User us1=database.getUser(gamer1);
+            User us2=database.getUser(gamer2);
+            int pt1=game(us1, sock1, traslation, k);
+            int pt2=game(us2, sock2, traslation, k);
+            if(pt1>pt2){
+                sendMessage("You won "+pt1+" to "+pt2+" Receive 3 bonus point",sock1);
+                sendMessage("You lose "+pt1+" to "+pt2,sock2);
+                pt1+=3;
+            } else if(pt2>pt1){
+                sendMessage("You won "+pt2+" to "+pt1+" Receive 3 bonus point",sock2);
+                sendMessage("You lose "+pt2+" to "+pt1,sock1);
+                pt2+=3;
+            } else {
+                sendMessage("You drew "+pt2+" to "+pt1,sock1);
+                sendMessage("You drew "+pt2+" to "+pt1,sock2);
+            }
+            us1.addPunteggio(pt1);
+            us2.addPunteggio(pt2);
         }
     }
 
@@ -94,5 +112,20 @@ public class GameThread extends Thread {
             ioe.printStackTrace();
         }
         return null;
+    }
+
+    public int game(User user, Socket sock, HashMap<String, String> translation, int k){
+        int punti=user.getPunteggio();
+        String original,transl;
+        for(Map.Entry<String,String> entry: translation.entrySet()){
+            original=entry.getKey();
+            sendMessage(original, sock);
+            transl=receiveResponse(sock);
+            if(transl.equals(entry.getValue()))
+                punti++;
+            else
+                punti--;
+        }
+        return punti;
     }
 }
