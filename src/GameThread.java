@@ -20,7 +20,7 @@ public class GameThread extends Thread {
     private Gson gson;                                              //Struttura per il parsing del dizionario da JSON
     private FileReader reader;                                      //FileReader per leggere il file del dizionario
     private Socket sock1, sock2;                                    //Socket dei due giocatori
-    private ArrayList<String> kparole;
+    private ArrayList<String> kparole;                              //ArrayList contenente le K parole scelte a caso dal dizionario
     private ArrayList<String> translation;                          //ArrayList contenente le traduzioni delle K parole scelte
     private ServerSocket gameSock;                                  //Server socket che gestisce la sfida
     private Selector selector;                                      //Selettore per la gestione dei due client
@@ -90,23 +90,28 @@ public class GameThread extends Thread {
             }catch (IOException ioe){
                 ioe.printStackTrace();
             }catch(NullPointerException e){
+                SocketChannel socket=(SocketChannel) key.channel();
+                String name=(String) key.attachment();
+                if(name==gamer1){
+                    us1.addPunteggio(punti[0]);
+                }else{
+                    us2.addPunteggio(punti[1]);
+                }
                 try {
-                    key.channel().close();
+                    socket.close();
                 }catch (IOException ioe){
                     ioe.printStackTrace();
                 }
             }
             //Se la traduzione va a buon fine faccio cominciare la sfida
-                int pt1 = game(us1, sock1);
-                int pt2 = game(us2, sock2);
                 if (punti[0] > punti[1]) {
                     sendMessage("You won " + punti[0] + " to " + punti[1] + ". Receive 3 bonus point", sock1);
                     sendMessage("You lose " + punti[0] + " to " + punti[1], sock2);
-                    pt1 += 3;
+                    punti[0] += 3;
                 } else if (punti[1] > punti[0]) {
                     sendMessage("You won " + punti[1] + " to " + punti[0] + ". Receive 3 bonus point", sock2);
                     sendMessage("You lose " + punti[1] + " to " + punti[0], sock1);
-                    pt2 += 3;
+                    punti[1]+= 3;
                 } else {
                     sendMessage("You drew " + punti[1] + " to " + punti[0], sock1);
                     sendMessage("You drew " + punti[1] + " to " + punti[0], sock2);
@@ -182,43 +187,11 @@ public class GameThread extends Thread {
     }
 
     /**
-     * metodo per la ricezione di risposte dal client
-     * @param socket socket di ricezione
-     * @return messaggio ricevuto
+     * Invia al client selezionato la successiva parola
+     * @param key la chiave da cui prendere il Channel
+     * @throws IOException
      */
-    public String receiveResponse(Socket socket){
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            return reader.readLine();
-        }catch (IOException ioe){
-            ioe.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Invia al client le parole da tradurre e assegna il punteggio
-     * @param user struttura dell'utente per l'aggiornamento del punteggio
-     * @param sock socket di comunicazione
-     * @return punteggio totalizzato dall'utente
-     */
-    public int game(User user, Socket sock){
-        /*int punti=user.getPunteggio();
-        String original,transl;
-        for(Map.Entry<String,String> entry: translation.entrySet()){
-            original=entry.getKey();
-            sendMessage(original, sock);
-            transl=receiveResponse(sock);
-            if(transl.equals(entry.getValue()))
-                punti++;
-            else
-                punti--;
-        }
-        return punti;*/
-        return 0;
-    }
-
-    public void writeWord(SelectionKey key)throws IOException{
+    public void writeWord(SelectionKey key) throws IOException{
         SocketChannel client=(SocketChannel) key.channel();
         String name=(String) key.attachment();
 
@@ -238,30 +211,31 @@ public class GameThread extends Thread {
         client.register(selector, SelectionKey.OP_READ, name);
     }
 
+    /**
+     * Riceve dal client selezionato la parola tradotta
+     * @param key la chiave da cui prendere il Channel
+     * @throws IOException
+     */
     public void readWord(SelectionKey key) throws IOException{
         SocketChannel client=(SocketChannel) key.channel();
         String name=(String) key.attachment();
 
         ByteBuffer buffer=ByteBuffer.allocate(1024);
         String answer="";
-        String word;
-        boolean cond=false;
+        String word="";
         if(name==null){
-            while(!cond){
-                int len=client.read(buffer);
-                buffer.flip();
-                while (buffer.hasRemaining()) {
-                    answer += StandardCharsets.UTF_8.decode(buffer).toString();
-                }
-                buffer.clear();
-                cond = len==0 || len==-1;
+            int len=client.read(buffer);
+            answer += StandardCharsets.UTF_8.decode(buffer).toString();
+            if(len==0 | len==-1) {
+                String[] substring = answer.split("\\s+");
+                word = substring[0];
+                name = substring[1];
+                client.register(selector, SelectionKey.OP_READ, name);
             }
-            String[] substring=answer.split("\\s+");
-            word=substring[0];
-            name=substring[1];
         } else{
             client.read(buffer);
             word=StandardCharsets.UTF_8.decode(buffer).toString();
+            client.register(selector, SelectionKey.OP_READ, name);
         }
 
         if(name==gamer1){
@@ -275,7 +249,5 @@ public class GameThread extends Thread {
             else
                 punti[1]--;
         }
-
-        client.register(selector, SelectionKey.OP_READ, name);
     }
 }
