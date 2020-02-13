@@ -114,10 +114,11 @@ public class MainController {
             Parent root=loader.load();
 
             GameController gameController=loader.getController();
-            gameController.setAnchor(root);
-            gameController.setStage(stage);
             gameController.setClientConnection(clientConnection);
+            gameController.setNewConnection();
+            gameController.setStage(stage);
             gameController.setFeedback(feedback);
+            gameController.setAnchor(root);
 
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
