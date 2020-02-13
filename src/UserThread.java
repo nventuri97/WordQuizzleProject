@@ -5,19 +5,19 @@ import java.util.Set;
 import Exception.*;
 
 public class UserThread extends Thread {
-    private Socket clientSock;
-    private BufferedReader reader;
-    private BufferedWriter out;
-    private Database db;
-    private String nickname;
-    private Boolean alive;
-    private Parser parser;
+    private Socket clientSock;                                      //socket di comunicazione con il client
+    private BufferedReader reader;                                  //bufferedReader per la lettura sulla socket client
+    private BufferedWriter out;                                     //BufferedReader per la scrittura sulla socket del client
+    private Database db;                                            //Istanza della classe Database per interagire con il database
+    private String nickname;                                        //nickname dell'utente
+    private Boolean alive;                                          //flag booleano per verificare l'attività del thread
 
     public UserThread(Socket client, Database database){
         this.clientSock=client;
         this.db=database;
         try {
             this.reader = new BufferedReader(new InputStreamReader(clientSock.getInputStream()));
+            this.out=new BufferedWriter(new OutputStreamWriter(clientSock.getOutputStream()));
         }catch (IOException ioe){
             ioe.printStackTrace();
         }
@@ -26,18 +26,22 @@ public class UserThread extends Thread {
     @Override
     public void run(){
         try {
+            //Stringa su cui vengono appoggiate le richieste del client
             String request;
             alive=true;
 
             while (alive) {
                 request = reader.readLine();
+                //Suddivido la richiesta in sotto stringhe per fare il parsing
                 String[] substring=request.split("\\s+");
+                //Header che indicherà l'operazione da fare
                 String header=substring[0];
                 System.out.println(header);
                 switch (header){
                     case "LOGIN":
-                        login(substring[1],substring[2]);
                         nickname=substring[1];
+                        login(nickname,substring[2]);
+                        //Salvo la socket TCP e la porta per la connessione UDP per la richiesta di sfida
                         db.setSocket(nickname, clientSock);
                         saveUDP();
                         break;
@@ -50,7 +54,7 @@ public class UserThread extends Thread {
                         newFriends(substring[1]);
                         break;
                     case "SHOWfriends":
-                        sendFriends();
+                        friends();
                         break;
                     case "SHOWscore":
                         String score=String.valueOf(db.mostra_punteggio(nickname));
@@ -67,6 +71,7 @@ public class UserThread extends Thread {
                         break;
                 }
             }
+            //Quando esco dal ciclo dopo aver fatto logout chiudo tutti i canali di comunicazione
             reader.close();
             out.close();
             clientSock.close();
@@ -80,9 +85,12 @@ public class UserThread extends Thread {
         }
     }
 
+    /**
+     * Metodo per l'invio al client di un messaggio
+     * @param s messaggio che voglio inviare al client
+     */
     public void sentResponse(String s){
         try {
-            out=new BufferedWriter(new OutputStreamWriter(clientSock.getOutputStream()));
             // Invio della risposta al client
             out.write(s);
             out.newLine();
@@ -93,8 +101,12 @@ public class UserThread extends Thread {
         }
     }
 
+    /**
+     * Salva la porta UDP inserendola in una HashMap all'interno del database
+     */
     public void saveUDP(){
         try {
+            //Leggo il messaggio che mi viene mandato dal client dopo che il login è stato effettuato
             String request = reader.readLine();
             String subs[]=request.split("\\s+");
             if(subs[0].equals("UDPport")) {
@@ -107,6 +119,12 @@ public class UserThread extends Thread {
         }
     }
 
+    /**
+     * Metodo di login
+     * @param nickname nickname inviato dal client
+     * @param password password inviata dal client
+     * @return true se il login ha successo, false altrimenti
+     */
     public boolean login(String nickname, String password) {
         try {
             if (db.login(nickname, password)) {
@@ -123,6 +141,10 @@ public class UserThread extends Thread {
         return false;
     }
 
+    /**
+     * Metodo per l'aggiunta di un nuovo amico
+     * @param friend nickname dell'amico da aggiungere
+     */
     public void newFriends(String friend){
         try {
             db.aggiungi_amico(nickname, friend);
@@ -134,29 +156,47 @@ public class UserThread extends Thread {
         }
     }
 
-    public void sendFriends(){
+    /**
+     * Metodo per la richiesta di visualizzazione della lista di amici
+     */
+    public void friends(){
+        //prelevo dal db la lista di amici di nickname
         Set<String> friends=db.lista_amici(nickname);
+        //parso in formato JSON ed invio la lista
         Parser parser=new Parser();
         String response=parser.parseToJSON(friends);
         sentResponse(response);
     }
 
+    /**
+     * Metodo per la richiesta di sfida ad un amico
+     * @param friend_nick nickname dell'amico a cui deve essere inviata la richiesta di sfida
+     */
     public void newGame(String friend_nick){
-        if(!db.userOnline(friend_nick))
+        //Controllo che ci sia veramente una relazione di amicizia
+        if(!(db.lista_amici(nickname)).contains(friend_nick))
+            sentResponse(friend_nick+" is not your friend");
+        //controllo che l'utente da sfidare sia online
+        else if(!db.userOnline(friend_nick))
             sentResponse("User is not online");
+        //e che non sia impegnato in un'altra sfida
         else if(db.userBusy(friend_nick))
             sentResponse("User is busy in another game");
         else {
+            //Prelevo dal db la porta UDP dell'amico a cui devo collegarmi per inviare la richiesta
             int port = db.getUDPport(friend_nick);
             try {
-                byte[] request;
+                //Setto la richiesta di sfida
                 String s = "NEW game from " + nickname;
+                byte[] request= s.getBytes();
+                //Ottengo l'InetAddress e creo la socket UDP per mandare la richiesta di sfida
                 InetAddress address = InetAddress.getByName("localhost");
                 DatagramSocket reqSocket = new DatagramSocket();
-                request = s.getBytes();
+                //Creo il datagramma, setto i dati e poi lo invio sulla socket UDP
                 DatagramPacket packet = new DatagramPacket(request, request.length, address, port);
                 packet.setData(request);
                 reqSocket.send(packet);
+                //Stampa di debug
                 System.out.println(reqSocket.getLocalPort());
 
                 //aspetto la risposta dell'amico
@@ -167,9 +207,13 @@ public class UserThread extends Thread {
                     reqSocket.setSoTimeout(30000);
                     reqSocket.receive(resp_packet);
                     String answer=new String(resp_packet.getData());
-                    System.out.println(answer);
+                    //controllo la risposta
                     if(answer.contains("yes")) {
                         sentResponse("Game accepted, it's starting");
+                        //Setto i due utenti a busy così che non possano ricevere altre richieste di sfida
+                        db.setBusy(nickname);
+                        db.setBusy(friend_nick);
+                        //Creo e avvio il thread per la gestione della partita
                         GameThread gt=new GameThread(db, nickname, friend_nick);
                         gt.start();
                     } else

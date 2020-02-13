@@ -1,19 +1,17 @@
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Optional;
 
 public class UDPThread extends Thread {
-    private static int UDPport;
-    private static DatagramSocket UDPSock;
-    private static boolean running;
-    private static DatagramPacket packet;
-    private static int frport;
-    private static InetAddress friend;
+    private static int UDPport;                                     //Porta UDP su cui il client è in ascolto
+    private static DatagramSocket UDPSock;                          //Socket UDP
+    private static boolean running;                                 //Flag booleano per verificare se il thread sta lavorando o meno
+    private static DatagramPacket packet;                           //Datagramma UDP per la risposta alla notifica
+    private static int frport;                                      //Porta a cui rispondere in UDP
+    private static InetAddress friend;                              //InetAddress da cui ho ricevuto il datagramma di notifica
 
     public UDPThread(int port){
         this.UDPport=port;
@@ -27,7 +25,6 @@ public class UDPThread extends Thread {
 
     @Override
     public void run(){
-        BufferedReader reader=new BufferedReader(new InputStreamReader(System.in));
         while(running){
             byte[] request=new byte[1024];
             packet=new DatagramPacket(request, 1024);
@@ -45,9 +42,11 @@ public class UDPThread extends Thread {
             //Ricostruisco la stringa inviata dal thread dell'utente che chiede la partita
             String source=new String(packet.getData());
             String[] substring=source.split("\\s+");
+            //Prendo dal pacchetto le informazioni necessarie a rispondere
             frport=packet.getPort();
             friend = packet.getAddress();
 
+            //Visualizzo in grafica la notifica
             Platform.runLater(new Runnable() {
                 @Override
                 public void run() {
@@ -79,14 +78,20 @@ public class UDPThread extends Thread {
                     });
                 }
             });
-            //Costruisco il messaggio di risposta da inviare via datagrampacket
         }
     }
 
+    /**
+     * Ferma l'UDPThread quando il client esegue il logout
+     */
     public static void setRunning(){
         running=false;
     }
 
+    /**
+     * invia la risposta al thread che ha inviato la notifica di sfida
+     * @param s risposta da inviare
+     */
     public static synchronized void setResponse(String s){
         if(s!=null) {
             byte[] data = s.getBytes();

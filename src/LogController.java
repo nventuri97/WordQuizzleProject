@@ -39,12 +39,13 @@ public class LogController {
     public void sign_up(ActionEvent click){
         nick=nickname.getText();
         pw=password.getText();
-        clientConnection.my_registration(nick, pw);
-        if(!(msg=clientConnection.getMsgAlert()).equals("")){
+        boolean result=clientConnection.my_registration(nick, pw);
+        if(!result){
+            msg=clientConnection.getMsgAlert();
             feedback.showAlert(Alert.AlertType.ERROR, "Sign-up Error", msg);
             message.setText("Close and reopen the application");
         }
-        else if(!clientConnection.getAdditionalMsg().equals("")){
+        else{
             message.setText("Now Login");
         }
         try{
@@ -63,8 +64,9 @@ public class LogController {
         int i=1;
         nick=nickname.getText();
         pw=password.getText();
-        clientConnection.my_log(nick,pw);
-        if(!(msg=clientConnection.getMsgAlert()).equals("")){
+        boolean result=clientConnection.my_log(nick,pw);
+        if(!result){
+            msg=clientConnection.getMsgAlert();
             feedback.showAlert(Alert.AlertType.ERROR, "Login Error", msg);
             if(i==3)
                 message.setText("You've finished your chances");

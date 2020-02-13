@@ -28,6 +28,7 @@ public class MainController {
     public void setClientConnection(ClientConnection clientConnection){
         this.clientConnection=clientConnection;
     }
+
     public void setStage(Stage stage){
         this.stage=stage;
     }
@@ -45,8 +46,8 @@ public class MainController {
     @FXML
     public void addFriend(ActionEvent click){
         String friend_nick=friend.getText();
-        clientConnection.addFriends(friend_nick);
-        if(!(msg=clientConnection.getAdditionalMsg()).equals(""))
+        msg=clientConnection.addFriends(friend_nick);
+        if(!msg.equals(""))
             feedback.showAlert(Alert.AlertType.CONFIRMATION, "New friend added", msg);
         else
             feedback.showAlert(Alert.AlertType.ERROR, "Friendship Errore", clientConnection.getMsgAlert());
@@ -55,9 +56,9 @@ public class MainController {
     @FXML
     public void view_ranking(ActionEvent click){
         list.getItems().clear();
-        clientConnection.my_ranking();
+        msg=clientConnection.my_ranking();
         Parser parser=new Parser();
-        List<Map.Entry<String, Integer>> ranking=parser.parseRankFromJSON(clientConnection.getAdditionalMsg());
+        List<Map.Entry<String, Integer>> ranking=parser.parseRankFromJSON(msg);
         for(Map.Entry<String, Integer> entry: ranking){
             list.getItems().add(entry.getKey()+" "+ entry.getValue());
         }
@@ -67,11 +68,14 @@ public class MainController {
     public void view_friends(ActionEvent click){
         list.getItems().clear();
         String result=clientConnection.showFriends();
-        Parser parser=new Parser();
-        Set<String> setOfFriend=parser.parseFriFromJSON(result);
-        for(String s: setOfFriend){
-            list.getItems().add(s);
-        }
+        if(result!=null) {
+            Parser parser = new Parser();
+            Set<String> setOfFriend = parser.parseFriFromJSON(result);
+            for (String s : setOfFriend) {
+                list.getItems().add(s);
+            }
+        } else
+            lblscore.setText("You don't already have friends");
     }
 
     @FXML
@@ -84,17 +88,33 @@ public class MainController {
 
     @FXML
     public void view_score(ActionEvent click){
-        clientConnection.score();
-        msg=clientConnection.getAdditionalMsg();
+        msg=clientConnection.score();
         lblscore.setText("Your score is "+msg);
     }
 
     @FXML
     public void newGame(ActionEvent click){
         String nickFriend=friend.getText();
-        clientConnection.newGame(nickFriend);
-        msg=clientConnection.getAdditionalMsg();
+        msg=clientConnection.newGame(nickFriend);
         lblscore.setText(msg);
+
+        try {
+            FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Game.fxml"));
+            Parent root=loader.load();
+
+            GameController gameController=loader.getController();
+            gameController.setAnchor(root);
+            gameController.setStage(stage);
+            gameController.setClientConnection(clientConnection);
+            gameController.setFeedback(feedback);
+
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
+            stage.setScene(scene);
+            stage.show();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
     }
 
     @FXML

@@ -7,20 +7,18 @@ import Exception.*;
 
 public class ClientConnection {
     //Porte di default per la connesione TCP, UDP e RMI
-    private int TCPport;
-    private int RMIport;
-    private Socket TCPSock;
-    private UDPThread udpThread;
-    private int UDPport;
-    private String msgAlert;
-    private String additionalMsg;
+    private int TCPport;                                        //Porta TCP del server a cui il client deve collegarsi
+    private int RMIport;                                        //Porta RMI
+    private int UDPport;                                        //Porta UDP su cui il client deve ricevere la notifica di sfida
+    private Socket TCPSock;                                     //Socket TCP del client
+    private UDPThread udpThread;                                //Thread UDP per la gestione delle notifiche
+    private String msgAlert;                                    //messaggio per settare l'allert
 
     public ClientConnection(){
         //Genero una porta random così da non avere BindException al collegamento di più client
         this.TCPport=20546;
         this.RMIport=20000;
         this.msgAlert="";
-        this.additionalMsg="";
         try {
             //Apro una socketchannel per instaurare la connessione TCP
             TCPSock = new Socket("localhost", TCPport);
@@ -32,9 +30,20 @@ public class ClientConnection {
 
     /**
      * procedura di registrazione lato client
+     * @param nickname nickname con cui l'utente vuole registrarsi
+     * @param password password che l'utente vuole utilizzare per registrarsi
      * @return true se la registrazione è avvenuta correttamente, false altrimenti
      */
     public boolean my_registration(String nickname, String password){
+        if(nickname==null || nickname==""){
+            setMsgAlert("Error 800: nickname already used");
+            return false;
+        }
+
+        if(password==null || password==""){
+            setMsgAlert("Error 810: non valid password");
+            return false;
+        }
         DatabaseInterface s_obj;
         Remote r_obj;
         boolean result=false;
@@ -59,9 +68,20 @@ public class ClientConnection {
 
     /**
      * Procedura di login lato client
-     * @return true se il login è avvenuto correttamente false altrimenti
+     * @param nickname nickname con cui l'utente si è registrato
+     * @param password password con cui l'utente si è registrato
+     * @return true se il login è avvenuto correttamente, false altrimenti
      */
     public boolean my_log(String nickname, String password){
+        if(nickname==null || nickname==""){
+            setMsgAlert("Error 800: nickname already used");
+            return false;
+        }
+
+        if(password==null || password==""){
+            setMsgAlert("Error 810: non valid password");
+            return false;
+        }
         //Setto la richiesta per il login
         String request = "LOGIN " +nickname+ " "+password;
         sendRequest(request);
@@ -69,6 +89,7 @@ public class ClientConnection {
         String answer=receiveResponse();
         //Controllo che ci sia il codice di avvenuto login
         if (answer.contains("505")) {
+            //Avvio il thread UDP e comunico la porta di ascolto al server
             udpThread = new UDPThread(UDPport);
             udpThread.start();
             sendRequest("UDPport " + UDPport);
@@ -80,6 +101,10 @@ public class ClientConnection {
         }
     }
 
+    /**
+     * Esegue il logout dell'utente
+     * @return true se il logout è avvenuto correttamente, false altrimenti
+     */
     public boolean my_logout(){
         String request="LOGOUT";
         sendRequest(request);
@@ -99,20 +124,34 @@ public class ClientConnection {
         return true;
     }
 
-    public void addFriends(String nickAmico){
-        //Compongo la richiesta TCP
-        String request="ADD "+nickAmico;
+    /**
+     * Aggiuge l'amico selezionato
+     * @param nickAmico nome dell'utente da aggiungere alle amicizie
+     * @return risposta del server se positiva, null altrimenti
+     */
+    public String addFriends(String nickAmico){
+        if(nickAmico==null || nickAmico=="")
+            setMsgAlert("511 This friend didn't join WordQuizzle");
+        else{
+            //Compongo la richiesta TCP
+            String request="ADD "+nickAmico;
 
-        sendRequest(request);
-        //Mi metto in attesa della risposta del server
-        String answer=receiveResponse();
-        if(answer.contains("510")){
-            setAdditionalMsg("Friend "+nickAmico+" is been correctly added");
-        } else {
-            setMsgAlert(answer);
+            sendRequest(request);
+            //Mi metto in attesa della risposta del server
+            String answer=receiveResponse();
+            if(answer.contains("510")){
+                return ("Friend "+nickAmico+" is been correctly added");
+            } else {
+                setMsgAlert(answer);
+            }
         }
+        return null;
     }
 
+    /**
+     * Richiede al server la lista degli amici dell'utente
+     * @return la lista di amici dell'utente
+     */
     public String showFriends(){
         String request="SHOWfriends";
         sendRequest(request);
@@ -123,34 +162,50 @@ public class ClientConnection {
         return answer;
     }
 
-    public void score(){
+    /**
+     * Richiede al server il punteggio dell'utente
+     * @return il punteggio totalizzato dall'utente
+     */
+    public String score(){
         String request="SHOWscore";
         sendRequest(request);
 
         //Mi metto in attesa della risposta dal server
         String answer=receiveResponse();
-        setAdditionalMsg(answer);
+        return answer;
     }
 
-    public void my_ranking(){
+    /**
+     * Richiede al server la classifica relativa all'utente
+     * @return restituisce la classifica dell'utente
+     */
+    public String my_ranking(){
         String request="SHOWranking";
         sendRequest(request);
 
         //Mi metto in attesa della risposta dal server
         String answer=receiveResponse();
         //restituisco ad operation la stringa in formato JSON che verrà parsata nel GUIThread
-        setAdditionalMsg(answer);
+        return answer;
     }
 
-    public void newGame(String friend){
+    public String newGame(String friend){
+        if(friend==null || friend=="") {
+            setMsgAlert("511 This friend didn't join WordQuizzle");
+            return null;
+        }
         String request="NEW game against " + friend;
         //Invio la richiesta al server
         sendRequest(request);
         //Mi metto in attesa della risposta dal server
         String answer = receiveResponse();
-        setAdditionalMsg(answer);
+        return answer;
     }
 
+    /**
+     * Invia le richieste al server
+     * @param request richiesta da inviare al server
+     */
     public void sendRequest(String request){
         try {
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(TCPSock.getOutputStream()));
@@ -162,6 +217,10 @@ public class ClientConnection {
         }
     }
 
+    /**
+     * riceve le risposte dal server
+     * @return risposta ricevuta dal server
+     */
     public String receiveResponse(){
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(TCPSock.getInputStream()));
@@ -170,24 +229,6 @@ public class ClientConnection {
             ioe.printStackTrace();
         }
         return null;
-    }
-
-    /**
-     * Aggiunge un messaggio opzionale all'operazione (ad esempio password, nickname o amico)
-     * @param msg
-     */
-    public synchronized void setAdditionalMsg(String msg){
-        //pulisco dal messaggio precedente
-        additionalMsg="";
-        additionalMsg=msg;
-    }
-
-    /**
-     * Restituisce il messaggio opzionale
-     * @return additionalMsg messaggio opzionale
-     */
-    public String getAdditionalMsg(){
-        return additionalMsg;
     }
 
     /**

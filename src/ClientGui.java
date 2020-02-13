@@ -6,11 +6,11 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class ClientGui extends Application {
-    static LogController logController;
+    static LogController logController;                         //Controller della pagina di login
     Parent root;
     FXMLLoader loader;
-    ClientConnection clientConnection;
-    Feedback feedback;
+    ClientConnection clientConnection;                          //Istanza dell'oggetto condiviso per la connessione con il server
+    Feedback feedback;                                          //Istanza della classe che produce gli Alert quando necessario
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -18,7 +18,7 @@ public class ClientGui extends Application {
         root = loader.load();
         clientConnection=new ClientConnection();
 
-        //Set controller
+        //Set LogController
         logController = loader.getController();
         logController.setAnchor(root);
         logController.setStage(stage);
@@ -26,7 +26,7 @@ public class ClientGui extends Application {
         feedback=new Feedback();
         logController.setFeedback(feedback);
 
-        //Log window
+        //set login window
         stage.setTitle("WORD QUIZZLE");
         stage.setResizable(false);
         Scene scene = new Scene(root);

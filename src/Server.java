@@ -35,6 +35,7 @@ public class Server {
             //Socket passiva su cui mi metto in ascolto
             ServerSocket server = new ServerSocket(TCPport);
             while(true){
+                //Accetto la richiesta di connessione e creo un thread utente dedicato
                 Socket client=server.accept();
                 UserThread u=new UserThread(client, database);
                 u.start();

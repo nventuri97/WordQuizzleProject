@@ -7,10 +7,10 @@ import java.util.*;
 import Exception.*;
 
 public class Database extends RemoteServer implements DatabaseInterface, Serializable {
-    private HashMap<String, User> database;
+    private HashMap<String, User> database;                             //HashMap contente tutti i dati persistenti degli utenti
     //private BCryptPasswordEncoder encoder;
-    private transient Parser parser;
-    private transient HashMap<String, Integer> UDPmap;
+    private transient Parser parser;                                    //Classe che effettua il parsing in JSON
+    private transient HashMap<String, Integer> UDPmap;                  //HashMap per la relazione utente porta UDP
 
     public Database(){
         this.database=new HashMap<>();
@@ -20,9 +20,11 @@ public class Database extends RemoteServer implements DatabaseInterface, Seriali
 
     @Override
     public synchronized boolean registra_utente(String nickname, String password) throws RemoteException, NickAlreadyExistException, NonValidPasswordException {
+        //Controllo che il nickname sia disponibile
         if(database.containsKey(nickname))
             throw new NickAlreadyExistException();
 
+        //Controllo che la password sia valida
         if(password==" ")
             throw new NonValidPasswordException();
 
@@ -160,33 +162,77 @@ public class Database extends RemoteServer implements DatabaseInterface, Seriali
         return jsonString;
     }
 
+    /**
+     * Metodo per prelevare un utente dal db
+     * @param nickname nickname dell'utente che si vuole prelevare
+     * @return struttura utente contente tutti i dati dell'utente
+     */
     public synchronized User getUser(String nickname){
         return database.get(nickname);
     }
 
+    /**
+     * Inserisce nell'HashMap la relazione <nickname, UDPport>
+     * @param nickname nickname dell'utente
+     * @param port porta UDP dell'utente
+     */
     public synchronized void setUDPmap(String nickname, int port){
         UDPmap.put(nickname, port);
     }
 
+    /**
+     * Preleva la porta UDP per comunicarla al thread utente
+     * @param nickname nickname dell'utente di cui è richiesta la porta UDP
+     * @return porta UDP dell'utente richiesto
+     */
     public int getUDPport(String nickname){
         return UDPmap.get(nickname);
     }
 
+    /**
+     * Verifica se l'utente è online
+     * @param nickname nickname dell'utente da controllare
+     * @return true se l'utente è online, false altrimenti
+     */
     public boolean userOnline(String nickname){
         User us=database.get(nickname);
         return us.isOnline();
     }
 
+    /**
+     * Verifica se l'utente è impegnato in una partita
+     * @param nickname nickname dell'utente da controllare
+     * @return true se l'utente è impegnato in una partita, false altrimenti
+     */
     public boolean userBusy(String nickname){
         User us=database.get(nickname);
         return us.isBusy();
     }
 
+    /**
+     * Imposta l'utente come impegnato
+     * @param nickname nickname dell'utente da settare
+     */
+    public void setBusy(String nickname){
+        User us=database.get(nickname);
+        us.setBusy();
+    }
+
+    /**
+     * Salva la socket con cui il server comunica con il client
+     * @param nickname nickname dell'utente
+     * @param socket socket con cui il server comunica
+     */
     public void setSocket(String nickname, Socket socket){
         User us=database.get(nickname);
         us.setTCPSocket(socket);
     }
 
+    /**
+     * Preleva la socket dell'utente richiesto
+     * @param nickname nickname dell'utente richiesto
+     * @return Socket di comunicazione server-client
+     */
     public Socket getSocket(String nickname){
         User us=database.get(nickname);
         return us.getTCPSocket();

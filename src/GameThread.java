@@ -1,5 +1,4 @@
 import com.google.gson.Gson;
-
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.Socket;
@@ -9,14 +8,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GameThread extends Thread {
-    private Database database;
-    private String gamer1;
-    private String gamer2;
-    private int k;
-    private Gson gson;
-    private FileReader reader;
-    private Socket sock1, sock2;
-    private HashMap<String, String> translation;
+    private Database database;                                      //Istanza della classe database passata dal thread utente che invia la sfida
+    private String gamer1;                                          //Nickname del primo giocatore
+    private String gamer2;                                          //Nickname del secondo giocatore
+    private int k;                                                  //Numero di parole da inviare nella sfida, un intero tra 1 e 12
+    private Gson gson;                                              //Struttura per il parsing del dizionario da JSON
+    private FileReader reader;                                      //FileReader per leggere il file del dizionario
+    private Socket sock1, sock2;                                    //Socket dei due giocatori
+    private HashMap<String, String> translation;                    //HashMap contenente le traduzioni delle K parole scelte
 
     public GameThread(Database db, String nick1, String nick2){
         this.k=(int) (Math.random()*11)+1;
@@ -26,7 +25,7 @@ public class GameThread extends Thread {
         this.translation=new HashMap<>(k);
         this.gson=new Gson();
         try {
-            this.reader = new FileReader("./src/dizionario.json");
+            this.reader = new FileReader("./dizionario.json");
         }catch(FileNotFoundException fe){
             fe.printStackTrace();
         }
@@ -36,9 +35,10 @@ public class GameThread extends Thread {
 
     @Override
     public void run(){
-        //al massimo faccio tradurre 20 parole
+        //Creo un'ArrayList contenente il dizionario e poi seleziono le K parole
         ArrayList<String> dictionary=gson.fromJson(reader, ArrayList.class);
         ArrayList<String> kparole=getKWord(dictionary, k);
+        //Se la traduzione va a buon fine faccio cominciare la sfida
         if(getTranslation(translation,kparole,k)){
             User us1=database.getUser(gamer1);
             User us2=database.getUser(gamer2);
@@ -61,17 +61,34 @@ public class GameThread extends Thread {
         }
     }
 
+    /**
+     * Selezione K parole casuali e distinte dal dizionario e le inserisce nell'ArrayList
+     * @param dic Dizionario da cui prendere le parole
+     * @param k numero di parole da prelevare
+     * @return ArrayList contenente le parole selezionate
+     */
     public ArrayList<String> getKWord(ArrayList<String> dic, int k){
         ArrayList<String> s=new ArrayList<>(k);
-        int i;
+        int i=0;
         int len=dic.size();
-        for(i=0;i<k;i++){
+        while(i<k){
             int rand=(int) (Math.random()*(len-1));
-            s.add(dic.get(rand));
+            String word=dic.get(rand);
+            if(!s.contains(word)) {
+                s.add(word);
+                i++;
+            }
         }
         return s;
     }
 
+    /**
+     * Metodo che genera la traduzione delle parole selezionate tramite richieste HTTP GET
+     * @param t HashMap in cui inserire la traduzione
+     * @param kparole ArrayList contenente le k parole
+     * @param k numero di parole
+     * @return true se la traduzione è arrivata a buon fine, false altrimenti
+     */
     public boolean getTranslation(HashMap<String, String> t, ArrayList<String> kparole, int k){
         for(int i=0;i<k;i++) {
             try {
@@ -93,10 +110,15 @@ public class GameThread extends Thread {
         return true;
     }
 
-    public void sendMessage(String request, Socket socket){
+    /**
+     * Metodo per inviare messaggi/parole
+     * @param message messaggio da inviare al client
+     * @param socket socket di comunicazione
+     */
+    public void sendMessage(String message, Socket socket){
         try {
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            writer.write(request);
+            writer.write(message);
             writer.newLine();
             writer.flush();
         }catch(IOException ioe){
@@ -104,6 +126,11 @@ public class GameThread extends Thread {
         }
     }
 
+    /**
+     * metodo per la ricezione di risposte dal client
+     * @param socket socket di ricezione
+     * @return messaggio ricevuto
+     */
     public String receiveResponse(Socket socket){
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -114,6 +141,12 @@ public class GameThread extends Thread {
         return null;
     }
 
+    /**
+     * Invia al client le parole da tradurre e assegna il punteggio
+     * @param user struttura dell'utente per l'aggiornamento del punteggio
+     * @param sock socket di comunicazione
+     * @return punteggio totalizzato dall'utente
+     */
     public int game(User user, Socket sock){
         int punti=user.getPunteggio();
         String original,transl;
