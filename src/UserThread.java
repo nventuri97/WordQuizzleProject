@@ -1,5 +1,7 @@
 import java.io.*;
 import java.net.*;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.Set;
 
 import Exception.*;
@@ -216,8 +218,11 @@ public class UserThread extends Thread {
                         //Setto i due utenti a busy così che non possano ricevere altre richieste di sfida
                         db.setBusy(nickname);
                         db.setBusy(friend_nick);
+                        ServerSocketChannel socketChannel=ServerSocketChannel.open();
+                        ServerSocket serverSocket=socketChannel.socket();
+                        serverSocket.bind(new InetSocketAddress(0));
                         //Creo e avvio il thread per la gestione della partita
-                        GameThread gt=new GameThread(db, nickname, friend_nick);
+                        GameThread gt=new GameThread(db, nickname, friend_nick, serverSocket);
                         gt.start();
                     } else
                         sentResponse("Game denied");

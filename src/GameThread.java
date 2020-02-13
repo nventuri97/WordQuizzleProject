@@ -58,8 +58,8 @@ public class GameThread extends Thread {
         User us2 = database.getUser(gamer2);
         punti[0]=0;
         punti[1]=0;
-        ind1=0;
-        ind2=0;
+        ind1=1;
+        ind2=1;
 
         //Prendo la nuova porta su cui è aperta la gameSocket e la invio ai due client
         int newPort=gameSock.getLocalPort();
@@ -198,10 +198,13 @@ public class GameThread extends Thread {
         ByteBuffer buffer=ByteBuffer.allocate(100);
         buffer.clear();
         String word;
-        if(name==gamer1) {
+        //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
+        if(name==null){
+            word=kparole.get(0);
+        } else if(name==gamer1) {
             word = kparole.get(ind1);
             ind1++;
-        }else{
+        }else {
             word=kparole.get(ind2);
             ind2++;
         }

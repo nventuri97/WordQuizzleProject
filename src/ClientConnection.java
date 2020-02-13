@@ -1,5 +1,9 @@
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.rmi.Remote;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -11,8 +15,11 @@ public class ClientConnection {
     private int RMIport;                                        //Porta RMI
     private int UDPport;                                        //Porta UDP su cui il client deve ricevere la notifica di sfida
     private Socket TCPSock;                                     //Socket TCP del client
+    private String nick;
+    private SocketChannel GameSock;                             //Socket stabilita per la partita
     private UDPThread udpThread;                                //Thread UDP per la gestione delle notifiche
     private String msgAlert;                                    //messaggio per settare l'allert
+    private boolean firstWord;                                  //Flag che indica se quella da inviare è o meno la prima parola
 
     public ClientConnection(){
         //Genero una porta random così da non avere BindException al collegamento di più client
@@ -48,13 +55,14 @@ public class ClientConnection {
         Remote r_obj;
         boolean result=false;
 
+        nick=nickname;
         try{
             Registry reg= LocateRegistry.getRegistry(RMIport);
             r_obj=reg.lookup("DatabaseService");
             s_obj=(DatabaseInterface) r_obj;
 
             //Metodo di registrazione RMI
-            result=s_obj.registra_utente(nickname,password);
+            result=s_obj.registra_utente(nick,password);
 
         }catch (NickAlreadyExistException ne){
             setMsgAlert("Error 800: nickname already used");
@@ -247,5 +255,43 @@ public class ClientConnection {
      */
     public String getMsgAlert(){
         return msgAlert;
+    }
+
+    public void newGameConnection(){
+        String answer=receiveResponse();
+        String[] substring=answer.split("\\s+");
+
+        int port=Integer.parseInt(substring[2]);
+        try {
+            GameSock = SocketChannel.open(new InetSocketAddress("localhost", port));
+        }catch(IOException ioe){
+            ioe.printStackTrace();
+        }
+        firstWord=true;
+    }
+
+    public String receiveNewWord(){
+        ByteBuffer buffer=ByteBuffer.allocate(100);
+        try {
+            GameSock.read(buffer);
+        }catch (IOException ioe){
+            ioe.printStackTrace();
+        }
+        String word= StandardCharsets.UTF_8.decode(buffer).toString();
+        return word;
+    }
+
+    public void sendNewWord(String word){
+        ByteBuffer buffer;
+        if(firstWord){
+            String message=word+" "+nick;
+            buffer=ByteBuffer.wrap(message.getBytes());
+        }else
+            buffer=ByteBuffer.wrap(word.getBytes());
+        try {
+            GameSock.write(buffer);
+        }catch (IOException ioe){
+            ioe.printStackTrace();
+        }
     }
 }
