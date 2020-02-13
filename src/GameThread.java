@@ -275,5 +275,7 @@ public class GameThread extends Thread {
             else
                 punti[1]--;
         }
+
+        client.register(selector, SelectionKey.OP_READ, name);
     }
 }
