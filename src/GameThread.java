@@ -25,6 +25,7 @@ public class GameThread extends Thread {
     private ServerSocket gameSock;                                  //Server socket che gestisce la sfida
     private Selector selector;                                      //Selettore per la gestione dei due client
     private int[] punti;                                            //Array di interi per i punteggi
+    private GameTimer timer;                                            //Timer per la sfida
 
     public GameThread(Database db, String nick1, String nick2, ServerSocket ssocket){
         this.k=(int) (Math.random()*11)+1;
@@ -69,6 +70,8 @@ public class GameThread extends Thread {
 
         Set<SelectionKey> readyKeys= selector.selectedKeys();
         Iterator<SelectionKey> iterator=readyKeys.iterator();
+        timer=new GameTimer();
+        timer.start();
         while(iterator.hasNext()) {
             SelectionKey key=iterator.next();
             iterator.remove();
@@ -192,26 +195,32 @@ public class GameThread extends Thread {
      * @throws IOException
      */
     public void writeWord(SelectionKey key) throws IOException{
-        SocketChannel client=(SocketChannel) key.channel();
-        String name=(String) key.attachment();
+        SocketChannel client = (SocketChannel) key.channel();
+        String name = (String) key.attachment();
 
-        ByteBuffer buffer=ByteBuffer.allocate(100);
+        ByteBuffer buffer = ByteBuffer.allocate(100);
         buffer.clear();
-        String word;
-        //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
-        if(name==null){
-            word=kparole.get(0);
-        } else if(name==gamer1) {
-            word = kparole.get(ind1);
-            ind1++;
-        }else {
-            word=kparole.get(ind2);
-            ind2++;
-        }
-        buffer=ByteBuffer.wrap(word.getBytes());
-        client.write(buffer);
+        if(timer.isAlive()) {
+            String word;
+            //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
+            if (name == null) {
+                word = kparole.get(0);
+            } else if (name == gamer1) {
+                word = kparole.get(ind1);
+                ind1++;
+            } else {
+                word = kparole.get(ind2);
+                ind2++;
+            }
+            buffer = ByteBuffer.wrap(word.getBytes());
+            client.write(buffer);
 
-        client.register(selector, SelectionKey.OP_READ, name);
+            client.register(selector, SelectionKey.OP_READ, name);
+        }else{
+            String message="Time's up, game is finished";
+            buffer=ByteBuffer.wrap(message.getBytes());
+            client.write(buffer);
+        }
     }
 
     /**
