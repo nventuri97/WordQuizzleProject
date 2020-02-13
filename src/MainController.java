@@ -98,6 +98,17 @@ public class MainController {
         msg=clientConnection.newGame(nickFriend);
         lblscore.setText(msg);
 
+        launchGameGUI();
+    }
+
+    @FXML
+    public void clean(ActionEvent click){
+        list.getItems().clear();
+        friend.clear();
+        lblscore.setText("");
+    }
+
+    public void launchGameGUI(){
         try {
             FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Game.fxml"));
             Parent root=loader.load();
@@ -115,12 +126,5 @@ public class MainController {
         }catch(Exception e){
             e.printStackTrace();
         }
-    }
-
-    @FXML
-    public void clean(ActionEvent click){
-        list.getItems().clear();
-        friend.clear();
-        lblscore.setText("");
     }
 }

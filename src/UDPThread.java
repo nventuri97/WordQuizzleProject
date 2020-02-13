@@ -1,4 +1,6 @@
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import java.io.IOException;
@@ -62,6 +64,19 @@ public class UDPThread extends Thread {
 
                     if(result.get()==accept){
                         setResponse("yes");
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
+                                    Parent root = loader.load();
+                                    MainController controller = loader.getController();
+                                    controller.launchGameGUI();
+                                }catch(IOException ie){
+                                    ie.printStackTrace();
+                                }
+                            }
+                        });
                     } else
                         setResponse("no");
 
@@ -92,7 +107,7 @@ public class UDPThread extends Thread {
      * invia la risposta al thread che ha inviato la notifica di sfida
      * @param s risposta da inviare
      */
-    public static synchronized void setResponse(String s){
+    public static void setResponse(String s){
         if(s!=null) {
             byte[] data = s.getBytes();
             System.out.println(new String(data));

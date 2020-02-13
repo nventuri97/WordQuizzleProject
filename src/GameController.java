@@ -1,10 +1,11 @@
+import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
-import java.awt.event.ActionEvent;
+import javafx.event.ActionEvent;
 
 public class GameController {
     private ClientConnection clientConnection;
@@ -30,10 +31,15 @@ public class GameController {
     public void setAnchor(Parent root){
         wordfield=(TextField) root.lookup("#wordfield");
         lblword=(Label) root.lookup("#lblword");
+        lblword.setText(clientConnection.receiveNewWord());
     }
 
+    @FXML
     public void sendWord(ActionEvent click){
         msg=wordfield.getText();
-
+        clientConnection.sendNewWord(msg);
+        lblword.setText("");
+        wordfield.clear();
+        lblword.setText(clientConnection.receiveNewWord());
     }
 }
