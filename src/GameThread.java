@@ -1,63 +1,118 @@
 import com.google.gson.Gson;
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class GameThread extends Thread {
     private Database database;                                      //Istanza della classe database passata dal thread utente che invia la sfida
     private String gamer1;                                          //Nickname del primo giocatore
     private String gamer2;                                          //Nickname del secondo giocatore
-    private int k;                                                  //Numero di parole da inviare nella sfida, un intero tra 1 e 12
+    private int k, ind1, ind2;                                      //Numero di parole da inviare nella sfida, un intero tra 1 e 12, ind1 e ind2 indici della parola inviata
     private Gson gson;                                              //Struttura per il parsing del dizionario da JSON
     private FileReader reader;                                      //FileReader per leggere il file del dizionario
     private Socket sock1, sock2;                                    //Socket dei due giocatori
-    private HashMap<String, String> translation;                    //HashMap contenente le traduzioni delle K parole scelte
+    private ArrayList<String> kparole;
+    private ArrayList<String> translation;                          //ArrayList contenente le traduzioni delle K parole scelte
+    private ServerSocket gameSock;                                  //Server socket che gestisce la sfida
+    private Selector selector;                                      //Selettore per la gestione dei due client
+    private int[] punti;                                            //Array di interi per i punteggi
 
-    public GameThread(Database db, String nick1, String nick2){
+    public GameThread(Database db, String nick1, String nick2, ServerSocket ssocket){
         this.k=(int) (Math.random()*11)+1;
         this.database=db;
         this.gamer1=nick1;
         this.gamer2=nick2;
-        this.translation=new HashMap<>(k);
+        this.translation=new ArrayList<>(k);
         this.gson=new Gson();
         try {
             this.reader = new FileReader("./dizionario.json");
-        }catch(FileNotFoundException fe){
+            this.selector=Selector.open();
+        }catch(IOException fe){
             fe.printStackTrace();
         }
-        sock1=db.getSocket(gamer1);
-        sock2=db.getSocket(gamer2);
+        this.sock1=db.getSocket(gamer1);
+        this.sock2=db.getSocket(gamer2);
+        this.gameSock=ssocket;
+        this.punti=new int[2];
     }
 
     @Override
     public void run(){
+
         //Creo un'ArrayList contenente il dizionario e poi seleziono le K parole
         ArrayList<String> dictionary=gson.fromJson(reader, ArrayList.class);
-        ArrayList<String> kparole=getKWord(dictionary, k);
-        //Se la traduzione va a buon fine faccio cominciare la sfida
-        if(getTranslation(translation,kparole,k)){
-            User us1=database.getUser(gamer1);
-            User us2=database.getUser(gamer2);
-            int pt1=game(us1, sock1);
-            int pt2=game(us2, sock2);
-            if(pt1>pt2){
-                sendMessage("You won "+pt1+" to "+pt2+" Receive 3 bonus point",sock1);
-                sendMessage("You lose "+pt1+" to "+pt2,sock2);
-                pt1+=3;
-            } else if(pt2>pt1){
-                sendMessage("You won "+pt2+" to "+pt1+" Receive 3 bonus point",sock2);
-                sendMessage("You lose "+pt2+" to "+pt1,sock1);
-                pt2+=3;
-            } else {
-                sendMessage("You drew "+pt2+" to "+pt1,sock1);
-                sendMessage("You drew "+pt2+" to "+pt1,sock2);
+        kparole=getKWord(dictionary, k);
+        getTranslation(translation, kparole, k);
+
+        //Prelevo le due istanze della classe User dal database
+        User us1 = database.getUser(gamer1);
+        User us2 = database.getUser(gamer2);
+        punti[0]=0;
+        punti[1]=0;
+        ind1=0;
+        ind2=0;
+
+        //Prendo la nuova porta su cui è aperta la gameSocket e la invio ai due client
+        int newPort=gameSock.getLocalPort();
+        sendMessage("Game port "+newPort, sock1);
+        sendMessage("Game port "+newPort, sock2);
+
+
+        Set<SelectionKey> readyKeys= selector.selectedKeys();
+        Iterator<SelectionKey> iterator=readyKeys.iterator();
+        while(iterator.hasNext()) {
+            SelectionKey key=iterator.next();
+            iterator.remove();
+
+            try {
+                if(key.isAcceptable()){
+                        ServerSocketChannel server = (ServerSocketChannel) key.channel();
+                        //Creo una active socket derivata dalla accept sulla passive socket su cui il server è in ascolto
+                        SocketChannel client = server.accept();
+                        //Setto a non-blocking
+                        client.configureBlocking(false);
+                        //Aggiungo la key del client
+                        SelectionKey key2 = client.register(selector, SelectionKey.OP_READ |SelectionKey.OP_WRITE, null);
+                } else if(key.isReadable()){
+                    readWord(key);
+                } else if(key.isWritable()){
+                    writeWord(key);
+                }
+            }catch (IOException ioe){
+                ioe.printStackTrace();
+            }catch(NullPointerException e){
+                try {
+                    key.channel().close();
+                }catch (IOException ioe){
+                    ioe.printStackTrace();
+                }
             }
-            us1.addPunteggio(pt1);
-            us2.addPunteggio(pt2);
+            //Se la traduzione va a buon fine faccio cominciare la sfida
+                int pt1 = game(us1, sock1);
+                int pt2 = game(us2, sock2);
+                if (punti[0] > punti[1]) {
+                    sendMessage("You won " + punti[0] + " to " + punti[1] + ". Receive 3 bonus point", sock1);
+                    sendMessage("You lose " + punti[0] + " to " + punti[1], sock2);
+                    pt1 += 3;
+                } else if (punti[1] > punti[0]) {
+                    sendMessage("You won " + punti[1] + " to " + punti[0] + ". Receive 3 bonus point", sock2);
+                    sendMessage("You lose " + punti[1] + " to " + punti[0], sock1);
+                    pt2 += 3;
+                } else {
+                    sendMessage("You drew " + punti[1] + " to " + punti[0], sock1);
+                    sendMessage("You drew " + punti[1] + " to " + punti[0], sock2);
+                }
+                us1.addPunteggio(punti[0]);
+                us2.addPunteggio(punti[1]);
         }
     }
 
@@ -89,7 +144,7 @@ public class GameThread extends Thread {
      * @param k numero di parole
      * @return true se la traduzione è arrivata a buon fine, false altrimenti
      */
-    public boolean getTranslation(HashMap<String, String> t, ArrayList<String> kparole, int k){
+    public boolean getTranslation(ArrayList<String> t, ArrayList<String> kparole, int k){
         for(int i=0;i<k;i++) {
             try {
                 String word=kparole.get(i);
@@ -102,7 +157,7 @@ public class GameThread extends Thread {
                     sendMessage("Something is gone wrong, we are sorry", sock2);
                     return false;
                 }else
-                    t.put(word, translation);
+                    t.add(i,translation);
             }catch(Exception e){
                 e.printStackTrace();
             }
@@ -148,7 +203,7 @@ public class GameThread extends Thread {
      * @return punteggio totalizzato dall'utente
      */
     public int game(User user, Socket sock){
-        int punti=user.getPunteggio();
+        /*int punti=user.getPunteggio();
         String original,transl;
         for(Map.Entry<String,String> entry: translation.entrySet()){
             original=entry.getKey();
@@ -159,6 +214,66 @@ public class GameThread extends Thread {
             else
                 punti--;
         }
-        return punti;
+        return punti;*/
+        return 0;
+    }
+
+    public void writeWord(SelectionKey key)throws IOException{
+        SocketChannel client=(SocketChannel) key.channel();
+        String name=(String) key.attachment();
+
+        ByteBuffer buffer=ByteBuffer.allocate(100);
+        buffer.clear();
+        String word;
+        if(name==gamer1) {
+            word = kparole.get(ind1);
+            ind1++;
+        }else{
+            word=kparole.get(ind2);
+            ind2++;
+        }
+        buffer=ByteBuffer.wrap(word.getBytes());
+        client.write(buffer);
+
+        client.register(selector, SelectionKey.OP_READ, name);
+    }
+
+    public void readWord(SelectionKey key) throws IOException{
+        SocketChannel client=(SocketChannel) key.channel();
+        String name=(String) key.attachment();
+
+        ByteBuffer buffer=ByteBuffer.allocate(1024);
+        String answer="";
+        String word;
+        boolean cond=false;
+        if(name==null){
+            while(!cond){
+                int len=client.read(buffer);
+                buffer.flip();
+                while (buffer.hasRemaining()) {
+                    answer += StandardCharsets.UTF_8.decode(buffer).toString();
+                }
+                buffer.clear();
+                cond = len==0 || len==-1;
+            }
+            String[] substring=answer.split("\\s+");
+            word=substring[0];
+            name=substring[1];
+        } else{
+            client.read(buffer);
+            word=StandardCharsets.UTF_8.decode(buffer).toString();
+        }
+
+        if(name==gamer1){
+            if(word.equals(translation.get(ind1)))
+                punti[0]++;
+            else
+                punti[0]--;
+        }else{
+            if(word.equals(translation.get(ind2)))
+                punti[1]++;
+            else
+                punti[1]--;
+        }
     }
 }
