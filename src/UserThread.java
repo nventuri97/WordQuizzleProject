@@ -40,10 +40,11 @@ public class UserThread extends Thread {
                 switch (header){
                     case "LOGIN":
                         nickname=substring[1];
-                        login(nickname,substring[2]);
-                        //Salvo la socket TCP e la porta per la connessione UDP per la richiesta di sfida
-                        db.setSocket(nickname, clientSock);
-                        saveUDP();
+                        if(login(nickname,substring[2])) {
+                            //Salvo la socket TCP e la porta per la connessione UDP per la richiesta di sfida
+                            db.setSocket(nickname, clientSock);
+                            saveUDP();
+                        }
                         break;
                     case "LOGOUT":
                         db.logout(nickname);
@@ -76,10 +77,12 @@ public class UserThread extends Thread {
             out.close();
             clientSock.close();
         }catch(NullPointerException ne){
-            //Se il client crasha per qualche motivo in questo modo garantisco
-            //all'utente di potersi connettere nuovamente quando vorrà
-            db.logout(nickname);
-            System.out.println(clientSock+" crashed, logout executed");
+            if(db.contains(nickname)) {
+                //Se il client crasha per qualche motivo in questo modo garantisco
+                //all'utente di potersi connettere nuovamente quando vorrà
+                db.logout(nickname);
+                System.out.println(clientSock + " crashed, logout executed");
+            }
         }catch(IOException ioe){
             ioe.printStackTrace();
         }

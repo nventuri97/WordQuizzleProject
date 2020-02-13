@@ -16,6 +16,7 @@ public class LogController {
     private String pw;
     private String nick;
     private Feedback feedback;
+    private int i=0;
 
     public void setClientConnection(ClientConnection clientConnection){
         this.clientConnection=clientConnection;
@@ -61,18 +62,19 @@ public class LogController {
     @FXML
     public void login(ActionEvent click){
         message.setText("");
-        int i=1;
         nick=nickname.getText();
         pw=password.getText();
         boolean result=clientConnection.my_log(nick,pw);
         if(!result){
             msg=clientConnection.getMsgAlert();
             feedback.showAlert(Alert.AlertType.ERROR, "Login Error", msg);
-            if(i==3)
+            i++;
+            if(i==5) {
                 message.setText("You've finished your chances");
+                stage.close();
+            }
             else {
-                message.setText("You have " + (3 - i) + " chances");
-                i++;
+                message.setText("You have " + (5 - i) + " chances");
             }
             password.clear();
             nickname.clear();

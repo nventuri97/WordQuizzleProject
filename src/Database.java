@@ -73,14 +73,16 @@ public class Database extends RemoteServer implements DatabaseInterface, Seriali
      * @param nickname nickname utilizzato dall'utente che vuole effettuare l'operazione
      */
     public synchronized void logout(String nickname){
-        //Prendo l'istanza utente relativa al nickname
-        User us=database.get(nickname);
-        //modifico il valore del parametro online
-        us.setOnline();
-        //reinserisco nel database l'istanza con il valore aggiornato
-        database.put(nickname,us);
-        parser=new Parser();
-        parser.saveDB(this);
+        if(database.containsKey(nickname)) {
+            //Prendo l'istanza utente relativa al nickname
+            User us = database.get(nickname);
+            //modifico il valore del parametro online
+            us.setOnline();
+            //reinserisco nel database l'istanza con il valore aggiornato
+            database.put(nickname, us);
+            parser = new Parser();
+            parser.saveDB(this);
+        }
     }
 
 
@@ -236,5 +238,12 @@ public class Database extends RemoteServer implements DatabaseInterface, Seriali
     public Socket getSocket(String nickname){
         User us=database.get(nickname);
         return us.getTCPSocket();
+    }
+
+    public boolean contains(String nickname){
+        if(database.containsKey(nickname))
+            return true;
+        else
+            return false;
     }
 }
