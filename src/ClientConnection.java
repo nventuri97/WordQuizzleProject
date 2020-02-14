@@ -289,7 +289,9 @@ public class ClientConnection {
         }catch (IOException ioe){
             ioe.printStackTrace();
         }
+        buffer.flip();
         String word= StandardCharsets.UTF_8.decode(buffer).toString();
+        buffer.clear();
         return word;
     }
 
@@ -302,6 +304,7 @@ public class ClientConnection {
         if(firstWord){
             String message=word+" "+nick;
             buffer=ByteBuffer.wrap(message.getBytes());
+            firstWord=false;
         }else
             buffer=ByteBuffer.wrap(word.getBytes());
         try {

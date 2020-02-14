@@ -26,7 +26,8 @@ public class GameThread extends Thread {
     private Selector selector;                                      //Selettore per la gestione dei due client
     private int[] punti;                                            //Array di interi per i punteggi
     private GameTimer timer;                                        //Timer per la sfida
-    private Boolean endGaming;                                         //flag per il controllo del while
+    private Boolean endGaming;                                      //flag per il controllo del while
+    private ByteBuffer buffer;                                      //Buffer di appoggio per letture e scritture
 
     public GameThread(Database db, String nick1, String nick2, ServerSocketChannel ssocket){
         this.k=(int) (Math.random()*11)+1;
@@ -216,8 +217,7 @@ public class GameThread extends Thread {
         SocketChannel client = (SocketChannel) key.channel();
         String name = (String) key.attachment();
 
-        ByteBuffer buffer = ByteBuffer.allocate(100);
-        buffer.clear();
+        buffer = ByteBuffer.allocate(100);
         if(timer.isAlive()) {
             String word;
             //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
@@ -255,11 +255,11 @@ public class GameThread extends Thread {
         SocketChannel client=(SocketChannel) key.channel();
         String name=(String) key.attachment();
 
-        ByteBuffer buffer=ByteBuffer.allocate(1024);
+        buffer.flip();
         String answer="";
         String word="";
+        int len=client.read(buffer);
         if(name==null){
-            int len=client.read(buffer);
             answer += StandardCharsets.UTF_8.decode(buffer).toString();
             if(len==0 | len==-1) {
                 String[] substring = answer.split("\\s+");
@@ -269,11 +269,13 @@ public class GameThread extends Thread {
                 key.attach(name);
             }
         } else{
-            client.read(buffer);
             word=StandardCharsets.UTF_8.decode(buffer).toString();
             key.interestOps(SelectionKey.OP_WRITE);
             key.attach(name);
         }
+        buffer.clear();
+        //Stampa di debug
+        System.out.println(word);
 
         if(name==gamer1){
             if(word.equals(translation.get(ind1)))

@@ -35,12 +35,8 @@ public class GameController {
     public void setAnchor(Parent root){
         wordfield=(TextField) root.lookup("#wordfield");
         lblword=(Label) root.lookup("#lblword");
-    }
-
-    public void setLblword(){
-        String word=clientConnection.receiveNewWord();
-        lblword.setText(word);
-        System.out.println(word);
+        lblword.setText("");
+        lblword.setText("Click ready");
     }
 
     @FXML
@@ -49,6 +45,13 @@ public class GameController {
         clientConnection.sendNewWord(msg);
         lblword.setText("");
         wordfield.clear();
-        lblword.setText(clientConnection.receiveNewWord());
+        //lblword.setText(clientConnection.receiveNewWord());
     }
+
+    @FXML
+    public void ready(ActionEvent click){
+        String word=clientConnection.receiveNewWord();
+        lblword.setText(word);
+        System.out.println(word);}
+
 }

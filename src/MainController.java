@@ -131,7 +131,6 @@ public class MainController {
             stage.setScene(scene);
             stage.show();
             gameController.setAnchor(root);
-            gameController.setLblword();
         }catch(Exception e){
             e.printStackTrace();
         }
