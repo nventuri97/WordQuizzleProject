@@ -71,7 +71,7 @@ public class UDPThread extends Thread {
                                     FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
                                     Parent root = loader.load();
                                     MainController controller = loader.getController();
-                                    controller.launchGameGUI();
+                                    controller.launchWaitingGUI();
                                 }catch(IOException ie){
                                     ie.printStackTrace();
                                 }

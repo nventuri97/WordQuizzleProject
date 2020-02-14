@@ -66,6 +66,12 @@ public class GameThread extends Thread {
         ind1=1;
         ind2=1;
 
+        try {
+            this.gameSockChannel.register(selector, SelectionKey.OP_ACCEPT);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
         //Prendo la nuova porta su cui è aperta la gameSocket e la invio ai due client
         //Stampa di debug
         System.out.println("Invio la porta per la nuova connessione");
@@ -75,11 +81,6 @@ public class GameThread extends Thread {
 
         timer=new GameTimer();
         timer.start();
-        try {
-            this.gameSockChannel.register(selector, SelectionKey.OP_ACCEPT);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
 
         //Stampa di debug
         System.out.println("Sono qui");

@@ -20,10 +20,10 @@ public class GameController {
         this.clientConnection=clientConnection;
     }
 
-    public void setNewConnection(){
+    public void setNewConnection() {
         clientConnection.newGameConnection();
-
     }
+
     public void setStage(Stage stage){
         this.stage=stage;
     }
