@@ -98,7 +98,7 @@ public class ClientConnection {
         //Controllo che ci sia il codice di avvenuto login
         if (answer.contains("505")) {
             //Avvio il thread UDP e comunico la porta di ascolto al server
-            udpThread = new UDPThread(UDPport);
+            udpThread = new UDPThread(UDPport, this);
             udpThread.start();
             sendRequest("UDPport " + UDPport);
             return true;

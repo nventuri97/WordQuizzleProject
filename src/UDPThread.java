@@ -1,5 +1,6 @@
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import java.io.IOException;
@@ -13,9 +14,10 @@ public class UDPThread extends Thread {
     private static DatagramPacket packet;                           //Datagramma UDP per la risposta alla notifica
     private static int frport;                                      //Porta a cui rispondere in UDP
     private static InetAddress friend;                              //InetAddress da cui ho ricevuto il datagramma di notifica
-    private static boolean accepted;                               //flag per l'avvio dell'interfaccia
+    private static boolean accepted;                                //flag per l'avvio dell'interfaccia
+    private static ClientConnection connection;                     //Istanza da passare alla classe di caricamente dell'interfaccia
 
-    public UDPThread(int port){
+    public UDPThread(int port, ClientConnection connection){
         this.UDPport=port;
         try{
             this.UDPSock=new DatagramSocket(UDPport);
@@ -24,6 +26,7 @@ public class UDPThread extends Thread {
         }
         this.running=true;
         this.accepted=false;
+        this.connection=connection;
     }
 
     @Override
@@ -65,7 +68,14 @@ public class UDPThread extends Thread {
 
                     if(result.get()==accept){
                         setResponse("yes");
-                        setAccepted();
+                        try {
+                            FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
+                            Parent root = loader.load();
+                            MainController controller = loader.getController();
+                            controller.launchGameGUI(connection);
+                        }catch (IOException ioe){
+                            ioe.printStackTrace();
+                        }
                     } else
                         setResponse("no");
 
@@ -80,20 +90,9 @@ public class UDPThread extends Thread {
                             setResponse("no");
                         }
                     });
+                    t.start();
                 }
             });
-            if(accepted) {
-                //Stampa di debug
-                System.out.println(accepted);
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
-                        MainController controller = loader.getController();
-                        controller.launchGameGUI();
-                    }
-                });
-            }
         }
     }
 
@@ -102,10 +101,6 @@ public class UDPThread extends Thread {
      */
     public static void setRunning(){
         running=false;
-    }
-
-    public static void setAccepted(){
-        accepted=!accepted;
     }
 
     /**

@@ -13,7 +13,7 @@ import java.util.Set;
 
 public class MainController {
     private ClientConnection clientConnection;
-    private Stage stage;
+    private static Stage stage;
     private TextField friend;
     private Button add_friend;
     private Button score;
@@ -99,7 +99,7 @@ public class MainController {
         msg=clientConnection.newGame(nickFriend);
         lblscore.setText(msg);
         if(msg.contains("accepted")) {
-            launchGameGUI();
+            launchGameGUI(clientConnection);
         }
     }
 
@@ -110,20 +110,26 @@ public class MainController {
         lblscore.setText("");
     }
 
-    public void launchGameGUI(){
+    public static Stage getStage(){
+        return stage;
+    }
+
+    public void launchGameGUI(ClientConnection connection){
         try {
             FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Game.fxml"));
             Parent root=loader.load();
 
             GameController gameController=loader.getController();
-            gameController.setClientConnection(clientConnection);
+            gameController.setClientConnection(connection);
+            gameController.setFeedback(feedback);
             gameController.setNewConnection();
-            gameController.setStage(stage);
+            Stage newStage=getStage();
+            gameController.setStage(newStage);
 
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
-            stage.setScene(scene);
-            stage.show();
+            newStage.setScene(scene);
+            newStage.show();
             gameController.setAnchor(root);
         }catch(Exception e){
             e.printStackTrace();

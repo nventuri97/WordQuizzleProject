@@ -38,7 +38,7 @@ public class GameThread extends Thread {
 
         this.gameSockChannel=ssocket;
         try {
-            this.reader = new FileReader("./dizionario2.json");
+            this.reader = new FileReader("./dizionario.json");
             this.selector=Selector.open();
         }catch(IOException fe){
             fe.printStackTrace();

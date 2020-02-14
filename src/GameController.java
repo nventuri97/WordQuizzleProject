@@ -8,7 +8,7 @@ import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 
 public class GameController {
-    private ClientConnection clientConnection;
+    private static ClientConnection clientConnection;
     private Stage stage;
     private Feedback feedback;
     private String msg;
@@ -16,11 +16,11 @@ public class GameController {
     private TextField wordfield;
     private Button sendWord;
 
-    public void setClientConnection(ClientConnection clientConnection){
-        this.clientConnection=clientConnection;
+    public static void setClientConnection(ClientConnection connection){
+        clientConnection=connection;
     }
 
-    public void setNewConnection() {
+    public static void setNewConnection() {
         clientConnection.newGameConnection();
     }
 
