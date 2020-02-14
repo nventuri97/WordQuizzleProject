@@ -1,6 +1,5 @@
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import java.io.IOException;
@@ -14,6 +13,7 @@ public class UDPThread extends Thread {
     private static DatagramPacket packet;                           //Datagramma UDP per la risposta alla notifica
     private static int frport;                                      //Porta a cui rispondere in UDP
     private static InetAddress friend;                              //InetAddress da cui ho ricevuto il datagramma di notifica
+    private static boolean accepted;                               //flag per l'avvio dell'interfaccia
 
     public UDPThread(int port){
         this.UDPport=port;
@@ -23,6 +23,7 @@ public class UDPThread extends Thread {
             se.printStackTrace();
         }
         this.running=true;
+        this.accepted=false;
     }
 
     @Override
@@ -64,35 +65,35 @@ public class UDPThread extends Thread {
 
                     if(result.get()==accept){
                         setResponse("yes");
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
-                                    Parent root = loader.load();
-                                    MainController controller = loader.getController();
-                                    controller.launchWaitingGUI();
-                                }catch(IOException ie){
-                                    ie.printStackTrace();
-                                }
-                            }
-                        });
+                        setAccepted();
                     } else
                         setResponse("no");
 
                     Thread t=new Thread(()->{
-                        try{
+                        try {
                             Thread.sleep(30000);
-                        }catch(InterruptedException ie){
+                        } catch (InterruptedException ie) {
                             ie.printStackTrace();
                         }
-                        if(notify.isShowing()) {
+                        if (notify.isShowing()) {
                             notify.close();
                             setResponse("no");
                         }
                     });
                 }
             });
+            if(accepted) {
+                //Stampa di debug
+                System.out.println(accepted);
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
+                        MainController controller = loader.getController();
+                        controller.launchGameGUI();
+                    }
+                });
+            }
         }
     }
 
@@ -101,6 +102,10 @@ public class UDPThread extends Thread {
      */
     public static void setRunning(){
         running=false;
+    }
+
+    public static void setAccepted(){
+        accepted=!accepted;
     }
 
     /**

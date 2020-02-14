@@ -38,7 +38,7 @@ public class GameThread extends Thread {
 
         this.gameSockChannel=ssocket;
         try {
-            this.reader = new FileReader("./dizionario.json");
+            this.reader = new FileReader("./dizionario2.json");
             this.selector=Selector.open();
         }catch(IOException fe){
             fe.printStackTrace();
@@ -52,6 +52,20 @@ public class GameThread extends Thread {
 
     @Override
     public void run(){
+        try {
+            this.gameSockChannel.register(selector, SelectionKey.OP_ACCEPT);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        //Stampa di debug
+        System.out.println("Chiave registrata");
+
+        //Prendo la nuova porta su cui è aperta la gameSocket e la invio ai due client
+        //Stampa di debug
+        int newPort=gameSockChannel.socket().getLocalPort();
+        System.out.println("Invio la porta per la nuova connessione "+newPort);
+        sendMessage("Game port "+newPort, sock1);
+        sendMessage("Game port "+newPort, sock2);
 
         //Creo un'ArrayList contenente il dizionario e poi seleziono le K parole
         ArrayList<String> dictionary=gson.fromJson(reader, ArrayList.class);
@@ -65,19 +79,6 @@ public class GameThread extends Thread {
         punti[1]=0;
         ind1=1;
         ind2=1;
-
-        try {
-            this.gameSockChannel.register(selector, SelectionKey.OP_ACCEPT);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
-        //Prendo la nuova porta su cui è aperta la gameSocket e la invio ai due client
-        //Stampa di debug
-        System.out.println("Invio la porta per la nuova connessione");
-        int newPort=gameSockChannel.socket().getLocalPort();
-        sendMessage("Game port "+newPort, sock1);
-        sendMessage("Game port "+newPort, sock2);
 
         timer=new GameTimer();
         timer.start();
