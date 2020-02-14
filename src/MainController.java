@@ -6,6 +6,7 @@ import javafx.stage.Stage;
 import javafx.scene.control.*;
 import javafx.event.ActionEvent;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +49,7 @@ public class MainController {
         String friend_nick=friend.getText();
         msg=clientConnection.addFriends(friend_nick);
         if(!msg.equals(""))
-            feedback.showAlert(Alert.AlertType.CONFIRMATION, "New friend added", msg);
+            lblscore.setText(msg);
         else
             feedback.showAlert(Alert.AlertType.ERROR, "Friendship Errore", clientConnection.getMsgAlert());
     }
@@ -97,8 +98,9 @@ public class MainController {
         String nickFriend=friend.getText();
         msg=clientConnection.newGame(nickFriend);
         lblscore.setText(msg);
-
-        launchGameGUI();
+        if(msg.contains("accepted")) {
+            launchGameGUI();
+        }
     }
 
     @FXML
@@ -116,9 +118,9 @@ public class MainController {
             GameController gameController=loader.getController();
             gameController.setClientConnection(clientConnection);
             gameController.setNewConnection();
+            gameController.setAnchor(root);
             gameController.setStage(stage);
             gameController.setFeedback(feedback);
-            gameController.setAnchor(root);
 
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());

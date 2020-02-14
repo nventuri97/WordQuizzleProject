@@ -110,8 +110,6 @@ public class UDPThread extends Thread {
     public static void setResponse(String s){
         if(s!=null) {
             byte[] data = s.getBytes();
-            System.out.println(new String(data));
-            System.out.println(frport);
             DatagramPacket response = new DatagramPacket(data, data.length, friend, frport);
             response.setData(data);
             try {

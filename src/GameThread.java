@@ -22,18 +22,21 @@ public class GameThread extends Thread {
     private Socket sock1, sock2;                                    //Socket dei due giocatori
     private ArrayList<String> kparole;                              //ArrayList contenente le K parole scelte a caso dal dizionario
     private ArrayList<String> translation;                          //ArrayList contenente le traduzioni delle K parole scelte
-    private ServerSocket gameSock;                                  //Server socket che gestisce la sfida
+    private ServerSocketChannel gameSockChannel;                    //Server socket che gestisce la sfida
     private Selector selector;                                      //Selettore per la gestione dei due client
     private int[] punti;                                            //Array di interi per i punteggi
-    private GameTimer timer;                                            //Timer per la sfida
+    private GameTimer timer;                                        //Timer per la sfida
+    private Boolean endGaming;                                         //flag per il controllo del while
 
-    public GameThread(Database db, String nick1, String nick2, ServerSocket ssocket){
+    public GameThread(Database db, String nick1, String nick2, ServerSocketChannel ssocket){
         this.k=(int) (Math.random()*11)+1;
         this.database=db;
         this.gamer1=nick1;
         this.gamer2=nick2;
         this.translation=new ArrayList<>(k);
         this.gson=new Gson();
+
+        this.gameSockChannel=ssocket;
         try {
             this.reader = new FileReader("./dizionario.json");
             this.selector=Selector.open();
@@ -42,8 +45,9 @@ public class GameThread extends Thread {
         }
         this.sock1=db.getSocket(gamer1);
         this.sock2=db.getSocket(gamer2);
-        this.gameSock=ssocket;
+        this.gameSockChannel=ssocket;
         this.punti=new int[2];
+        this.endGaming=false;
     }
 
     @Override
@@ -63,65 +67,79 @@ public class GameThread extends Thread {
         ind2=1;
 
         //Prendo la nuova porta su cui è aperta la gameSocket e la invio ai due client
-        int newPort=gameSock.getLocalPort();
+        //Stampa di debug
+        System.out.println("Invio la porta per la nuova connessione");
+        int newPort=gameSockChannel.socket().getLocalPort();
         sendMessage("Game port "+newPort, sock1);
         sendMessage("Game port "+newPort, sock2);
 
-
-        Set<SelectionKey> readyKeys= selector.selectedKeys();
-        Iterator<SelectionKey> iterator=readyKeys.iterator();
         timer=new GameTimer();
         timer.start();
-        while(iterator.hasNext()) {
-            SelectionKey key=iterator.next();
-            iterator.remove();
+        try {
+            this.gameSockChannel.register(selector, SelectionKey.OP_ACCEPT);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
-            try {
-                if(key.isAcceptable()){
+        //Stampa di debug
+        System.out.println("Sono qui");
+        while(!endGaming) {
+            Set<SelectionKey> readyKeys = selector.selectedKeys();
+            Iterator<SelectionKey> iterator = readyKeys.iterator();
+
+            while (iterator.hasNext()) {
+                //Stampa di debug
+                System.out.println("Ora sono qui");
+                SelectionKey key = iterator.next();
+                iterator.remove();
+                try {
+                    if (key.isAcceptable()) {
                         ServerSocketChannel server = (ServerSocketChannel) key.channel();
                         //Creo una active socket derivata dalla accept sulla passive socket su cui il server è in ascolto
                         SocketChannel client = server.accept();
+                        System.out.println("Client " + client + " accepted");
                         //Setto a non-blocking
                         client.configureBlocking(false);
                         //Aggiungo la key del client
-                        SelectionKey key2 = client.register(selector, SelectionKey.OP_READ |SelectionKey.OP_WRITE, null);
-                } else if(key.isReadable()){
-                    readWord(key);
-                } else if(key.isWritable()){
-                    writeWord(key);
-                }
-            }catch (IOException ioe){
-                ioe.printStackTrace();
-            }catch(NullPointerException e){
-                SocketChannel socket=(SocketChannel) key.channel();
-                String name=(String) key.attachment();
-                if(name==gamer1){
-                    us1.addPunteggio(punti[0]);
-                }else{
-                    us2.addPunteggio(punti[1]);
-                }
-                try {
-                    socket.close();
-                }catch (IOException ioe){
+                        SelectionKey key2 = client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, null);
+                    } else if (key.isReadable()) {
+                        readWord(key);
+                    } else if (key.isWritable()) {
+                        writeWord(key);
+                    }
+                } catch (IOException ioe) {
                     ioe.printStackTrace();
+                } catch (NullPointerException e) {
+                    SocketChannel socket = (SocketChannel) key.channel();
+                    String name = (String) key.attachment();
+                    if (name == gamer1) {
+                        us1.addPunteggio(punti[0]);
+                    } else {
+                        us2.addPunteggio(punti[1]);
+                    }
+                    try {
+                        socket.close();
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
                 }
             }
-            //Se la traduzione va a buon fine faccio cominciare la sfida
-                if (punti[0] > punti[1]) {
-                    sendMessage("You won " + punti[0] + " to " + punti[1] + ". Receive 3 bonus point", sock1);
-                    sendMessage("You lose " + punti[0] + " to " + punti[1], sock2);
-                    punti[0] += 3;
-                } else if (punti[1] > punti[0]) {
-                    sendMessage("You won " + punti[1] + " to " + punti[0] + ". Receive 3 bonus point", sock2);
-                    sendMessage("You lose " + punti[1] + " to " + punti[0], sock1);
-                    punti[1]+= 3;
-                } else {
-                    sendMessage("You drew " + punti[1] + " to " + punti[0], sock1);
-                    sendMessage("You drew " + punti[1] + " to " + punti[0], sock2);
-                }
-                us1.addPunteggio(punti[0]);
-                us2.addPunteggio(punti[1]);
         }
+        //Se la traduzione va a buon fine faccio cominciare la sfida
+        /*if (punti[0] > punti[1]) {
+            sendMessage("You won " + punti[0] + " to " + punti[1] + ". Receive 3 bonus point", sock1);
+            sendMessage("You lose " + punti[0] + " to " + punti[1], sock2);
+            punti[0] += 3;
+        } else if (punti[1] > punti[0]) {
+            sendMessage("You won " + punti[1] + " to " + punti[0] + ". Receive 3 bonus point", sock2);
+            sendMessage("You lose " + punti[1] + " to " + punti[0], sock1);
+            punti[1]+= 3;
+        } else {
+            sendMessage("You drew " + punti[1] + " to " + punti[0], sock1);
+            sendMessage("You drew " + punti[1] + " to " + punti[0], sock2);
+        }*/
+        us1.addPunteggio(punti[0]);
+        us2.addPunteggio(punti[1]);
     }
 
     /**
@@ -208,7 +226,7 @@ public class GameThread extends Thread {
             } else if (name == gamer1) {
                 word = kparole.get(ind1);
                 ind1++;
-            } else {
+            } else{
                 word = kparole.get(ind2);
                 ind2++;
             }
@@ -220,6 +238,7 @@ public class GameThread extends Thread {
             String message="Time's up, game is finished";
             buffer=ByteBuffer.wrap(message.getBytes());
             client.write(buffer);
+            endGaming=true;
         }
     }
 

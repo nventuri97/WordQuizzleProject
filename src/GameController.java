@@ -22,6 +22,7 @@ public class GameController {
 
     public void setNewConnection(){
         clientConnection.newGameConnection();
+
     }
     public void setStage(Stage stage){
         this.stage=stage;

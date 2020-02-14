@@ -201,8 +201,6 @@ public class UserThread extends Thread {
                 DatagramPacket packet = new DatagramPacket(request, request.length, address, port);
                 packet.setData(request);
                 reqSocket.send(packet);
-                //Stampa di debug
-                System.out.println(reqSocket.getLocalPort());
 
                 //aspetto la risposta dell'amico
                 byte[] response = new byte[1024];
@@ -219,10 +217,10 @@ public class UserThread extends Thread {
                         db.setBusy(nickname);
                         db.setBusy(friend_nick);
                         ServerSocketChannel socketChannel=ServerSocketChannel.open();
-                        ServerSocket serverSocket=socketChannel.socket();
-                        serverSocket.bind(new InetSocketAddress(0));
+                        socketChannel.bind(new InetSocketAddress(0));
+                        socketChannel.configureBlocking(false);
                         //Creo e avvio il thread per la gestione della partita
-                        GameThread gt=new GameThread(db, nickname, friend_nick, serverSocket);
+                        GameThread gt=new GameThread(db, nickname, friend_nick, socketChannel);
                         gt.start();
                     } else
                         sentResponse("Game denied");

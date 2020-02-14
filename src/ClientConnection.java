@@ -257,11 +257,18 @@ public class ClientConnection {
         return msgAlert;
     }
 
+    /**
+     * Setta la nuova connessione per la partita con GameSocket
+     */
     public void newGameConnection(){
+        //Stampa di debug
+        System.out.println("Aspetto la porta");
         String answer=receiveResponse();
         String[] substring=answer.split("\\s+");
 
         int port=Integer.parseInt(substring[2]);
+        //Stringa di debug
+        System.out.println(port);
         try {
             GameSock = SocketChannel.open(new InetSocketAddress("localhost", port));
         }catch(IOException ioe){
@@ -270,6 +277,10 @@ public class ClientConnection {
         firstWord=true;
     }
 
+    /**
+     * riceve la nuova parola dal GameThread
+     * @return stringa contenente la parola ricevuta
+     */
     public String receiveNewWord(){
         ByteBuffer buffer=ByteBuffer.allocate(100);
         try {
@@ -281,6 +292,10 @@ public class ClientConnection {
         return word;
     }
 
+    /**
+     * Invia la parola tradotta al GameThread
+     * @param word parola tradotta
+     */
     public void sendNewWord(String word){
         ByteBuffer buffer;
         if(firstWord){
