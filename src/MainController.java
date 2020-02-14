@@ -121,16 +121,17 @@ public class MainController {
 
             GameController gameController=loader.getController();
             gameController.setClientConnection(connection);
-            gameController.setFeedback(feedback);
             gameController.setNewConnection();
-            Stage newStage=getStage();
-            gameController.setStage(newStage);
+            gameController.setFeedback(feedback);
+            stage=getStage();
+            gameController.setStage(stage);
 
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
-            newStage.setScene(scene);
-            newStage.show();
+            stage.setScene(scene);
+            stage.show();
             gameController.setAnchor(root);
+            gameController.setLblword();
         }catch(Exception e){
             e.printStackTrace();
         }

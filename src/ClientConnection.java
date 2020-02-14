@@ -55,14 +55,13 @@ public class ClientConnection {
         Remote r_obj;
         boolean result=false;
 
-        nick=nickname;
         try{
             Registry reg= LocateRegistry.getRegistry(RMIport);
             r_obj=reg.lookup("DatabaseService");
             s_obj=(DatabaseInterface) r_obj;
 
             //Metodo di registrazione RMI
-            result=s_obj.registra_utente(nick,password);
+            result=s_obj.registra_utente(nickname,password);
 
         }catch (NickAlreadyExistException ne){
             setMsgAlert("Error 800: nickname already used");
@@ -93,6 +92,7 @@ public class ClientConnection {
         //Setto la richiesta per il login
         String request = "LOGIN " +nickname+ " "+password;
         sendRequest(request);
+        nick=nickname;
 
         String answer=receiveResponse();
         //Controllo che ci sia il codice di avvenuto login
@@ -271,6 +271,7 @@ public class ClientConnection {
         System.out.println(port);
         try {
             GameSock = SocketChannel.open(new InetSocketAddress("localhost", port));
+            GameSock.configureBlocking(false);
         }catch(IOException ioe){
             ioe.printStackTrace();
         }

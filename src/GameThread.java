@@ -57,13 +57,9 @@ public class GameThread extends Thread {
         }catch (Exception e){
             e.printStackTrace();
         }
-        //Stampa di debug
-        System.out.println("Chiave registrata");
 
         //Prendo la nuova porta su cui è aperta la gameSocket e la invio ai due client
-        //Stampa di debug
         int newPort=gameSockChannel.socket().getLocalPort();
-        System.out.println("Invio la porta per la nuova connessione "+newPort);
         sendMessage("Game port "+newPort, sock1);
         sendMessage("Game port "+newPort, sock2);
 
@@ -83,17 +79,19 @@ public class GameThread extends Thread {
         timer=new GameTimer();
         timer.start();
 
-        //Stampa di debug
-        System.out.println("Sono qui");
         while(!endGaming) {
+            try{
+                selector.select();
+            }catch (IOException ioe){
+                ioe.printStackTrace();
+            }
             Set<SelectionKey> readyKeys = selector.selectedKeys();
             Iterator<SelectionKey> iterator = readyKeys.iterator();
 
             while (iterator.hasNext()) {
-                //Stampa di debug
-                System.out.println("Ora sono qui");
                 SelectionKey key = iterator.next();
                 iterator.remove();
+
                 try {
                     if (key.isAcceptable()) {
                         ServerSocketChannel server = (ServerSocketChannel) key.channel();
@@ -103,11 +101,11 @@ public class GameThread extends Thread {
                         //Setto a non-blocking
                         client.configureBlocking(false);
                         //Aggiungo la key del client
-                        SelectionKey key2 = client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, null);
-                    } else if (key.isReadable()) {
-                        readWord(key);
+                        SelectionKey key2 = client.register(selector, SelectionKey.OP_WRITE, null);
                     } else if (key.isWritable()) {
                         writeWord(key);
+                    } else if (key.isReadable()) {
+                        readWord(key);
                     }
                 } catch (IOException ioe) {
                     ioe.printStackTrace();
@@ -235,7 +233,11 @@ public class GameThread extends Thread {
             buffer = ByteBuffer.wrap(word.getBytes());
             client.write(buffer);
 
-            client.register(selector, SelectionKey.OP_READ, name);
+            //stampa di debug
+            System.out.println(word);
+
+            key.interestOps(SelectionKey.OP_READ);
+            key.attach(name);
         }else{
             String message="Time's up, game is finished";
             buffer=ByteBuffer.wrap(message.getBytes());
@@ -263,12 +265,14 @@ public class GameThread extends Thread {
                 String[] substring = answer.split("\\s+");
                 word = substring[0];
                 name = substring[1];
-                client.register(selector, SelectionKey.OP_READ, name);
+                key.interestOps(SelectionKey.OP_READ);
+                key.attach(name);
             }
         } else{
             client.read(buffer);
             word=StandardCharsets.UTF_8.decode(buffer).toString();
-            client.register(selector, SelectionKey.OP_READ, name);
+            key.interestOps(SelectionKey.OP_WRITE);
+            key.attach(name);
         }
 
         if(name==gamer1){
