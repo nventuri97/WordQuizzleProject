@@ -20,10 +20,6 @@ public class GameController {
         clientConnection=connection;
     }
 
-    public static void setNewConnection() {
-        clientConnection.newGameConnection();
-    }
-
     public void setStage(Stage stage){
         this.stage=stage;
     }
@@ -32,11 +28,10 @@ public class GameController {
         this.feedback=feedback;
     }
 
-    public void setAnchor(Parent root){
+    public void setAnchor(Parent root,String newWord){
         wordfield=(TextField) root.lookup("#wordfield");
         lblword=(Label) root.lookup("#lblword");
-        lblword.setText("");
-        lblword.setText("Click ready");
+        lblword.setText(newWord);
     }
 
     @FXML
@@ -45,13 +40,6 @@ public class GameController {
         clientConnection.sendNewWord(msg);
         lblword.setText("");
         wordfield.clear();
-        //lblword.setText(clientConnection.receiveNewWord());
+        lblword.setText(clientConnection.receiveNewWord());
     }
-
-    @FXML
-    public void ready(ActionEvent click){
-        String word=clientConnection.receiveNewWord();
-        lblword.setText(word);
-        System.out.println(word);}
-
 }

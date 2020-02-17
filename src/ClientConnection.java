@@ -271,7 +271,6 @@ public class ClientConnection {
         System.out.println(port);
         try {
             GameSock = SocketChannel.open(new InetSocketAddress("localhost", port));
-            GameSock.configureBlocking(false);
         }catch(IOException ioe){
             ioe.printStackTrace();
         }
@@ -303,6 +302,8 @@ public class ClientConnection {
         ByteBuffer buffer;
         if(firstWord){
             String message=word+" "+nick;
+            //Stampa di debug
+            System.out.println(message);
             buffer=ByteBuffer.wrap(message.getBytes());
             firstWord=false;
         }else

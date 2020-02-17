@@ -99,7 +99,7 @@ public class MainController {
         msg=clientConnection.newGame(nickFriend);
         lblscore.setText(msg);
         if(msg.contains("accepted")) {
-            launchGameGUI(clientConnection);
+            launchWaitingGUI(clientConnection);
         }
     }
 
@@ -114,25 +114,28 @@ public class MainController {
         return stage;
     }
 
-    public void launchGameGUI(ClientConnection connection){
+    public void launchWaitingGUI(ClientConnection connection){
         try {
-            FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Game.fxml"));
+            FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Waiting.fxml"));
             Parent root=loader.load();
 
-            GameController gameController=loader.getController();
-            gameController.setClientConnection(connection);
-            gameController.setNewConnection();
-            gameController.setFeedback(feedback);
+            WaitingController waitingController=loader.getController();
+            waitingController.setClientConnection(connection);
+            waitingController.setNewConnection();
+            waitingController.setFeedback(feedback);
+            waitingController.setAnchor(root);
             stage=getStage();
-            gameController.setStage(stage);
+            waitingController.setStage(stage);
 
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
-            gameController.setAnchor(root);
+            waitingController.waitTime();
+
         }catch(Exception e){
             e.printStackTrace();
         }
     }
+
 }
