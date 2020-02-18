@@ -49,6 +49,7 @@ public class GameThread extends Thread {
         this.gameSockChannel=ssocket;
         this.punti=new int[2];
         this.endGaming=false;
+        buffer = ByteBuffer.allocate(1024);
     }
 
     @Override
@@ -101,8 +102,11 @@ public class GameThread extends Thread {
                         System.out.println("Client " + client + " accepted");
                         //Setto a non-blocking
                         client.configureBlocking(false);
+                        String[] data=new String[2];
+                        data[0]="";
+                        data[1]="";
                         //Aggiungo la key del client
-                        SelectionKey key2 = client.register(selector, SelectionKey.OP_WRITE, null);
+                        client.register(selector, SelectionKey.OP_WRITE, data);
                     } else if (key.isWritable()) {
                         writeWord(key);
                     } else if (key.isReadable()) {
@@ -215,13 +219,14 @@ public class GameThread extends Thread {
      */
     public void writeWord(SelectionKey key) throws IOException{
         SocketChannel client = (SocketChannel) key.channel();
-        String name = (String) key.attachment();
+        String[] d=(String[]) key.attachment();
+        String name=d[0];
 
-        buffer = ByteBuffer.allocate(100);
+        buffer.clear();
         if(timer.isAlive()) {
             String word;
             //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
-            if (name == null) {
+            if (name == "") {
                 word = kparole.get(0);
             } else if (name == gamer1) {
                 word = kparole.get(ind1);
@@ -237,11 +242,12 @@ public class GameThread extends Thread {
             System.out.println(word);
 
             key.interestOps(SelectionKey.OP_READ);
-            key.attach(name);
+            key.attach(d);
         }else{
             String message="Time's up, game is finished";
             buffer=ByteBuffer.wrap(message.getBytes());
             client.write(buffer);
+            buffer.clear();
             endGaming=true;
         }
     }
@@ -253,30 +259,57 @@ public class GameThread extends Thread {
      */
     public void readWord(SelectionKey key) throws IOException{
         SocketChannel client=(SocketChannel) key.channel();
-        String name=(String) key.attachment();
-
-        buffer.flip();
-        String answer="";
+        String[] data=(String[]) key.attachment();
+        String name=data[0];
+        String answer=data[1];
         String word="";
+
+        buffer.clear();
         int len=client.read(buffer);
-        if(name==null){
-            answer += StandardCharsets.UTF_8.decode(buffer).toString();
-            if(len==0 | len==-1) {
+        buffer.flip();
+
+        //Client crashato
+        if(len==-1){
+            System.out.println("Client "+client+" is crashed");
+            key.channel().close();
+            key.cancel();
+        //Ho finito di leggere le cose
+        }else if(len==0){
+            if(name=="") {
                 String[] substring = answer.split("\\s+");
                 word = substring[0];
-                name = substring[1];
-                key.interestOps(SelectionKey.OP_READ);
+                data[0] = substring[1];
+                data[1]="";
+                key.interestOps(SelectionKey.OP_WRITE);
+                key.attach(data);
+            }
+        //Ho letto tutto quello che c'era da leggere
+        } else if(len<1024){
+            answer+= StandardCharsets.UTF_8.decode(buffer).toString();
+            if(name=="") {
+                String[] substring = answer.split("\\s+");
+                word = substring[0];
+                data[0] = substring[1];
+                data[1]="";
+                key.interestOps(SelectionKey.OP_WRITE);
+                key.attach(data);
+            } else {
+                word=answer;
+                key.interestOps(SelectionKey.OP_WRITE);
                 key.attach(name);
             }
-        } else{
-            word=StandardCharsets.UTF_8.decode(buffer).toString();
-            key.interestOps(SelectionKey.OP_WRITE);
-            key.attach(name);
+        //Devo leggere ancora
+        } else if(len==1024){
+            answer+= StandardCharsets.UTF_8.decode(buffer).toString();
+            data[1]=answer;
+            key.attach(data);
         }
-        buffer.clear();
-        //Stampa di debug
-        System.out.println(word);
 
+        //Stampa di debug
+        System.out.println(answer);
+
+        buffer.clear();
+        //Questo è sbagliato ma devo controllare solo dopo che sia stata letta tutta la parola
         if(name==gamer1){
             if(word.equals(translation.get(ind1)))
                 punti[0]++;

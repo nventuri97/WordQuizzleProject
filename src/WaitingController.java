@@ -28,12 +28,7 @@ public class WaitingController{
     }
 
     public void waitTime(){
-        String word;
-        while(true){
-            word=clientConnection.receiveNewWord();
-            if(word!="")
-                break;
-        }
+        String word=clientConnection.receiveNewWord();
         launchGameGUI(clientConnection, word);
     }
 
