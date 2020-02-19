@@ -17,8 +17,6 @@ public class GameThread extends Thread {
     private String gamer1;                                          //Nickname del primo giocatore
     private String gamer2;                                          //Nickname del secondo giocatore
     private int k;                                                  //Numero di parole da inviare nella sfida, un intero tra 1 e 12
-    private int ind1;                                               //ind1 indice della parola inviata a gamer1
-    private int ind2;                                               //ind2 indice della parola inviata a gamer2
     private Gson gson;                                              //Struttura per il parsing del dizionario da JSON
     private FileReader reader;                                      //FileReader per leggere il file del dizionario
     private Socket sock1, sock2;                                    //Socket dei due giocatori
@@ -26,7 +24,6 @@ public class GameThread extends Thread {
     private ArrayList<String> translation;                          //ArrayList contenente le traduzioni delle K parole scelte
     private ServerSocketChannel gameSockChannel;                    //Server socket che gestisce la sfida
     private Selector selector;                                      //Selettore per la gestione dei due client
-    private int[] punti;                                            //Array di interi per i punteggi
     private GameTimer timer;                                        //Timer per la sfida
     private Boolean endGaming;                                      //flag per il controllo del while
 
@@ -48,7 +45,6 @@ public class GameThread extends Thread {
         this.sock1=db.getSocket(gamer1);
         this.sock2=db.getSocket(gamer2);
         this.gameSockChannel=ssocket;
-        this.punti=new int[2];
         this.endGaming=false;
     }
 
@@ -73,10 +69,6 @@ public class GameThread extends Thread {
         //Prelevo le due istanze della classe User dal database
         User us1 = database.getUser(gamer1);
         User us2 = database.getUser(gamer2);
-        punti[0]=0;
-        punti[1]=0;
-        ind1=1;
-        ind2=1;
 
         timer=new GameTimer();
         timer.start();
@@ -102,9 +94,7 @@ public class GameThread extends Thread {
                         System.out.println("Client " + client + " accepted");
                         //Setto a non-blocking
                         client.configureBlocking(false);
-                        String[] data=new String[2];
-                        data[0]="";
-                        data[1]="";
+                        GamerData data=new GamerData();
                         //Aggiungo la key del client
                         client.register(selector, SelectionKey.OP_WRITE, data);
                     } else if (key.isWritable()) {
@@ -115,15 +105,15 @@ public class GameThread extends Thread {
                 } catch (IOException ioe) {
                     ioe.printStackTrace();
                 } catch (NullPointerException e) {
-                    SocketChannel socket = (SocketChannel) key.channel();
-                    String name = (String) key.attachment();
+                    GamerData data=(GamerData) key.attachment();
+                    String name=data.getUsername();
                     if (name == gamer1) {
-                        us1.addPunteggio(punti[0]);
+                        us1.addPunteggio(data.getPunti());
                     } else {
-                        us2.addPunteggio(punti[1]);
+                        us2.addPunteggio(data.getPunti());
                     }
                     try {
-                        socket.close();
+                        key.channel().close();
                     } catch (IOException ioe) {
                         ioe.printStackTrace();
                     }
@@ -142,9 +132,9 @@ public class GameThread extends Thread {
         } else {
             sendMessage("You drew " + punti[1] + " to " + punti[0], sock1);
             sendMessage("You drew " + punti[1] + " to " + punti[0], sock2);
-        }*/
+        }
         us1.addPunteggio(punti[0]);
-        us2.addPunteggio(punti[1]);
+        us2.addPunteggio(punti[1]);*/
     }
 
     /**
@@ -182,13 +172,16 @@ public class GameThread extends Thread {
                 URL site = new URL("https://api.mymemory.translated.net/get?q="+word+"&langpair=it|en");
                 HttpURLConnection connection=(HttpURLConnection) site.openConnection();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String translation=reader.readLine();
+                String result=reader.readLine();
                 if(connection.getResponseCode()!=200){
                     sendMessage("Something is gone wrong, we are sorry", sock1);
                     sendMessage("Something is gone wrong, we are sorry", sock2);
                     return false;
-                }else
-                    t.add(i,translation);
+                }else {
+                    Parser parser=new Parser();
+                    String translation=parser.readWordTranslate(result);
+                    t.add(i, translation);
+                }
             }catch(Exception e){
                 e.printStackTrace();
             }
@@ -219,25 +212,23 @@ public class GameThread extends Thread {
      */
     public void writeWord(SelectionKey key) throws IOException{
         SocketChannel client = (SocketChannel) key.channel();
-        String[] d=(String[]) key.attachment();
-        String name=d[0];
+        GamerData data=(GamerData) key.attachment();
+        String name=data.getUsername();
 
         ByteBuffer buffer;
         if(timer.isAlive()) {
-            String word;
+            String word="";
             //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
             if (name == "") {
                 word = kparole.get(0);
-            } else if (name == gamer1) {
                 //Stampa di debug
-                System.out.println("Gamer name is "+name+" and index "+ind1);
-                word = kparole.get(ind1);
-                ind1++;
-            } else{
+                System.out.println("Ho inviato la prima parola");
+            } else {
                 //Stampa di debug
-                System.out.println("Gamer name is "+name+" and index "+ind2);
-                word = kparole.get(ind2);
-                ind2++;
+                System.out.println(gamer1==name);
+                System.out.println("Gamer name is "+name+" and index "+data.getIndWord());
+                word = kparole.get(data.getIndWord());
+                data.setIndWord();
             }
             buffer = ByteBuffer.wrap(word.getBytes());
             client.write(buffer);
@@ -246,7 +237,7 @@ public class GameThread extends Thread {
             System.out.println(word);
 
             key.interestOps(SelectionKey.OP_READ);
-            key.attach(d);
+            key.attach(data);
         }else{
             String message="Time's up, game is finished";
             buffer=ByteBuffer.wrap(message.getBytes());
@@ -263,9 +254,9 @@ public class GameThread extends Thread {
      */
     public void readWord(SelectionKey key) throws IOException{
         SocketChannel client=(SocketChannel) key.channel();
-        String[] data=(String[]) key.attachment();
-        String name=data[0];
-        String answer=data[1];
+        GamerData data=(GamerData) key.attachment();
+        String name=data.getUsername();
+        String answer=data.getAnswer();
         String word="";
         //Stampa di debug
         System.out.println("Gamer name is "+name);
@@ -286,34 +277,80 @@ public class GameThread extends Thread {
             if(name=="") {
                 String[] substring = answer.split("\\s+");
                 word = substring[0];
-                data[0] = substring[1];
-                data[1]="";
+                data.setUsername(substring[1]);
+                data.setAnswer("");
                 key.interestOps(SelectionKey.OP_WRITE);
-                key.attach(data);
             } else {
                 word=answer;
                 key.interestOps(SelectionKey.OP_WRITE);
-                data[1]="";
-                key.attach(data);
+                data.setAnswer("");
             }
         //Devo leggere ancora
         } else if(len==1024){
             answer+= StandardCharsets.UTF_8.decode(buffer).toString();
-            data[1]=answer;
-            key.attach(data);
+            data.setAnswer(answer);
+
         }
 
-        //Questo è sbagliato ma devo controllare solo dopo che sia stata letta tutta la parola
-        if(name==gamer1){
-            if(word.equals(translation.get(ind1)))
-                punti[0]++;
-            else
-                punti[0]--;
-        }else if(name==gamer2){
-            if(word.equals(translation.get(ind2)))
-                punti[1]++;
-            else
-                punti[1]--;
+        if(word.equals(translation.get(data.getIndWord()-1)))
+            data.incPunti();
+        else
+            data.decPunti();
+
+        key.attach(data);
+    }
+
+
+    /**
+     * Classe di appoggio per la memorizzazione dei dati dell'utente
+     */
+    public class GamerData{
+        public String username;
+        public int indWord;
+        public String answer;
+        public int punti;
+
+        public GamerData(){
+            username="";
+            indWord=1;
+            punti=0;
+            answer="";
+        }
+
+        public String getUsername(){
+            return username;
+        }
+
+        public String getAnswer(){
+            return answer;
+        }
+
+        public int getIndWord(){
+            return indWord;
+        }
+
+        public int getPunti(){
+            return punti;
+        }
+
+        public void setUsername(String s){
+            username=s;
+        }
+
+        public void setAnswer(String s){
+            answer=s;
+        }
+
+        public void setIndWord(){
+            indWord++;
+        }
+
+        public void incPunti(){
+            punti++;
+        }
+
+        public void decPunti(){
+            punti--;
         }
     }
 }
