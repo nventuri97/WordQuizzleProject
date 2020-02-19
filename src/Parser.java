@@ -1,5 +1,7 @@
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 
 import java.io.*;
 import java.util.*;
@@ -67,5 +69,32 @@ public class Parser {
     public static List<Map.Entry<String, Integer>> parseRankFromJSON(String s){
         List<Map.Entry<String, Integer>> result=gson.fromJson(s,new TypeToken<List<AbstractMap.SimpleEntry<String, Integer>>>() {}.getType());
         return result;
+    }
+
+    public String readWordTranslate(String json) throws IOException {
+        String word = "";
+        JsonReader jsonReader = new JsonReader(new StringReader(json));
+
+        try {
+            while (jsonReader.hasNext()) {
+                JsonToken nextToken = jsonReader.peek();
+                //System.out.println(nextToken);
+
+                if (JsonToken.BEGIN_OBJECT.equals(nextToken)) {
+                    jsonReader.beginObject();
+                } else if (JsonToken.NAME.equals(nextToken)) {
+                    String name = jsonReader.nextName();
+                } else if (JsonToken.STRING.equals(nextToken)) {
+                    String value = jsonReader.nextString();
+                    return value;
+                } else if (JsonToken.NUMBER.equals(nextToken)) {
+                    long value = jsonReader.nextLong();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return word;
     }
 }
