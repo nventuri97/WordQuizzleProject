@@ -16,7 +16,9 @@ public class GameThread extends Thread {
     private Database database;                                      //Istanza della classe database passata dal thread utente che invia la sfida
     private String gamer1;                                          //Nickname del primo giocatore
     private String gamer2;                                          //Nickname del secondo giocatore
-    private int k, ind1, ind2;                                      //Numero di parole da inviare nella sfida, un intero tra 1 e 12, ind1 e ind2 indici della parola inviata
+    private int k;                                                  //Numero di parole da inviare nella sfida, un intero tra 1 e 12
+    private int ind1;                                               //ind1 indice della parola inviata a gamer1
+    private int ind2;                                               //ind2 indice della parola inviata a gamer2
     private Gson gson;                                              //Struttura per il parsing del dizionario da JSON
     private FileReader reader;                                      //FileReader per leggere il file del dizionario
     private Socket sock1, sock2;                                    //Socket dei due giocatori
@@ -27,7 +29,6 @@ public class GameThread extends Thread {
     private int[] punti;                                            //Array di interi per i punteggi
     private GameTimer timer;                                        //Timer per la sfida
     private Boolean endGaming;                                      //flag per il controllo del while
-    private ByteBuffer buffer;                                      //Buffer di appoggio per letture e scritture
 
     public GameThread(Database db, String nick1, String nick2, ServerSocketChannel ssocket){
         this.k=(int) (Math.random()*11)+1;
@@ -49,7 +50,6 @@ public class GameThread extends Thread {
         this.gameSockChannel=ssocket;
         this.punti=new int[2];
         this.endGaming=false;
-        buffer = ByteBuffer.allocate(1024);
     }
 
     @Override
@@ -222,16 +222,20 @@ public class GameThread extends Thread {
         String[] d=(String[]) key.attachment();
         String name=d[0];
 
-        buffer.clear();
+        ByteBuffer buffer;
         if(timer.isAlive()) {
             String word;
             //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
             if (name == "") {
                 word = kparole.get(0);
             } else if (name == gamer1) {
+                //Stampa di debug
+                System.out.println("Gamer name is "+name+" and index "+ind1);
                 word = kparole.get(ind1);
                 ind1++;
             } else{
+                //Stampa di debug
+                System.out.println("Gamer name is "+name+" and index "+ind2);
                 word = kparole.get(ind2);
                 ind2++;
             }
@@ -263,7 +267,10 @@ public class GameThread extends Thread {
         String name=data[0];
         String answer=data[1];
         String word="";
+        //Stampa di debug
+        System.out.println("Gamer name is "+name);
 
+        ByteBuffer buffer=ByteBuffer.allocate(1024);
         buffer.clear();
         int len=client.read(buffer);
         buffer.flip();
@@ -273,16 +280,6 @@ public class GameThread extends Thread {
             System.out.println("Client "+client+" is crashed");
             key.channel().close();
             key.cancel();
-        //Ho finito di leggere le cose
-        }else if(len==0){
-            if(name=="") {
-                String[] substring = answer.split("\\s+");
-                word = substring[0];
-                data[0] = substring[1];
-                data[1]="";
-                key.interestOps(SelectionKey.OP_WRITE);
-                key.attach(data);
-            }
         //Ho letto tutto quello che c'era da leggere
         } else if(len<1024){
             answer+= StandardCharsets.UTF_8.decode(buffer).toString();
@@ -296,7 +293,8 @@ public class GameThread extends Thread {
             } else {
                 word=answer;
                 key.interestOps(SelectionKey.OP_WRITE);
-                key.attach(name);
+                data[1]="";
+                key.attach(data);
             }
         //Devo leggere ancora
         } else if(len==1024){
@@ -305,17 +303,13 @@ public class GameThread extends Thread {
             key.attach(data);
         }
 
-        //Stampa di debug
-        System.out.println(answer);
-
-        buffer.clear();
         //Questo è sbagliato ma devo controllare solo dopo che sia stata letta tutta la parola
         if(name==gamer1){
             if(word.equals(translation.get(ind1)))
                 punti[0]++;
             else
                 punti[0]--;
-        }else{
+        }else if(name==gamer2){
             if(word.equals(translation.get(ind2)))
                 punti[1]++;
             else

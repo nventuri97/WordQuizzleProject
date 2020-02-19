@@ -15,7 +15,7 @@ public class ClientConnection {
     private int RMIport;                                        //Porta RMI
     private int UDPport;                                        //Porta UDP su cui il client deve ricevere la notifica di sfida
     private Socket TCPSock;                                     //Socket TCP del client
-    private String nick;
+    private String nick;                                        //Nickname dell'utente da inviare con la prima parola della sfida
     private SocketChannel GameSock;                             //Socket stabilita per la partita
     private UDPThread udpThread;                                //Thread UDP per la gestione delle notifiche
     private String msgAlert;                                    //messaggio per settare l'allert
@@ -282,7 +282,8 @@ public class ClientConnection {
      * @return stringa contenente la parola ricevuta
      */
     public String receiveNewWord(){
-        ByteBuffer buffer=ByteBuffer.allocate(100);
+        ByteBuffer buffer=ByteBuffer.allocate(1024);
+        buffer.clear();
         try {
             GameSock.read(buffer);
         }catch (IOException ioe){
@@ -290,7 +291,6 @@ public class ClientConnection {
         }
         buffer.flip();
         String word= StandardCharsets.UTF_8.decode(buffer).toString();
-        buffer.clear();
         return word;
     }
 
@@ -300,18 +300,20 @@ public class ClientConnection {
      */
     public void sendNewWord(String word){
         ByteBuffer buffer;
+        String message="";
         if(firstWord){
-            String message=word+" "+nick;
-            //Stampa di debug
-            System.out.println(message);
+            message=word+" "+nick;
             buffer=ByteBuffer.wrap(message.getBytes());
             firstWord=false;
         }else
             buffer=ByteBuffer.wrap(word.getBytes());
+        int len=0;
         try {
-            GameSock.write(buffer);
+            len=GameSock.write(buffer);
         }catch (IOException ioe){
             ioe.printStackTrace();
         }
+        //Stampa di debug
+        System.out.println("Ho inviato "+len+" di "+message);
     }
 }
