@@ -302,7 +302,7 @@ public class ClientConnection {
         ByteBuffer buffer;
         String message="";
         if(firstWord){
-            message=word+" "+nick;
+            message=nick+" "+word;
             buffer=ByteBuffer.wrap(message.getBytes());
             firstWord=false;
         }else

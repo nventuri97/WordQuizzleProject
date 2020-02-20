@@ -1,7 +1,6 @@
 import com.google.gson.Gson;
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -26,6 +25,8 @@ public class GameThread extends Thread {
     private Selector selector;                                      //Selettore per la gestione dei due client
     private GameTimer timer;                                        //Timer per la sfida
     private Boolean endGaming;                                      //flag per il controllo del while
+    private GamerData gd1;                                          //dati di gioco relativi a gamer1
+    private GamerData gd2;                                          //dati di gioco relativi a gamer2
 
     public GameThread(Database db, String nick1, String nick2, ServerSocketChannel ssocket){
         this.k=(int) (Math.random()*11)+1;
@@ -46,6 +47,8 @@ public class GameThread extends Thread {
         this.sock2=db.getSocket(gamer2);
         this.gameSockChannel=ssocket;
         this.endGaming=false;
+        gd1=new GamerData();
+        gd2=new GamerData();
     }
 
     @Override
@@ -120,21 +123,25 @@ public class GameThread extends Thread {
                 }
             }
         }
+
+        int pt1, pt2;
+        pt1=gd1.getPunti();
+        pt2=gd2.getPunti();
         //Se la traduzione va a buon fine faccio cominciare la sfida
-        /*if (punti[0] > punti[1]) {
-            sendMessage("You won " + punti[0] + " to " + punti[1] + ". Receive 3 bonus point", sock1);
-            sendMessage("You lose " + punti[0] + " to " + punti[1], sock2);
-            punti[0] += 3;
-        } else if (punti[1] > punti[0]) {
-            sendMessage("You won " + punti[1] + " to " + punti[0] + ". Receive 3 bonus point", sock2);
-            sendMessage("You lose " + punti[1] + " to " + punti[0], sock1);
-            punti[1]+= 3;
+        if (pt1 > pt2) {
+            sendMessage("You won " + pt1 + " to " + pt2 + ". Receive 3 bonus point", sock1);
+            sendMessage("You lose " + pt1 + " to " + pt2, sock2);
+            pt1 += 3;
+        } else if (pt2 > pt1) {
+            sendMessage("You won " + pt2 + " to " + pt2 + ". Receive 3 bonus point", sock2);
+            sendMessage("You lose " + pt2 + " to " + pt1, sock1);
+            pt2+= 3;
         } else {
-            sendMessage("You drew " + punti[1] + " to " + punti[0], sock1);
-            sendMessage("You drew " + punti[1] + " to " + punti[0], sock2);
+            sendMessage("You drew " + pt1 + " to " + pt2, sock1);
+            sendMessage("You drew " +pt2+ " to " + pt1, sock2);
         }
-        us1.addPunteggio(punti[0]);
-        us2.addPunteggio(punti[1]);*/
+        us1.addPunteggio(pt1);
+        us2.addPunteggio(pt2);
     }
 
     /**
@@ -176,12 +183,24 @@ public class GameThread extends Thread {
                 if(connection.getResponseCode()!=200){
                     sendMessage("Something is gone wrong, we are sorry", sock1);
                     sendMessage("Something is gone wrong, we are sorry", sock2);
+                    connection.disconnect();
                     return false;
                 }else {
                     Parser parser=new Parser();
                     String translation=parser.readWordTranslate(result);
+                    //Nel caso in cui la parola abbia come terminazione un carattere di punteggiatura lo elimino
+                    if(translation.endsWith(","))
+                        translation.replace(",", "");
+                    else if(translation.endsWith("."))
+                        translation.replace(".", "");
+                    else if(translation.endsWith("!"))
+                        translation.replace("!","");
+                    //Trasformo tutte le lettere in minuscole
+                    translation.toLowerCase();
+                    System.out.println(translation);
                     t.add(i, translation);
                 }
+                connection.disconnect();
             }catch(Exception e){
                 e.printStackTrace();
             }
@@ -210,14 +229,14 @@ public class GameThread extends Thread {
      * @param key la chiave da cui prendere il Channel
      * @throws IOException
      */
-    public void writeWord(SelectionKey key) throws IOException{
+    public void writeWord(SelectionKey key) throws IOException {
         SocketChannel client = (SocketChannel) key.channel();
-        GamerData data=(GamerData) key.attachment();
-        String name=data.getUsername();
+        GamerData data = (GamerData) key.attachment();
+        String name = data.getUsername();
 
         ByteBuffer buffer;
-        if(timer.isAlive()) {
-            String word="";
+        if (timer.isAlive() && !data.getHaveFinished()) {
+            String word = "";
             //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
             if (name == "") {
                 word = kparole.get(0);
@@ -225,8 +244,8 @@ public class GameThread extends Thread {
                 System.out.println("Ho inviato la prima parola");
             } else {
                 //Stampa di debug
-                System.out.println(gamer1==name);
-                System.out.println("Gamer name is "+name+" and index "+data.getIndWord());
+                System.out.println(gamer1 == name);
+                System.out.println("Gamer name is " + name + " and index " + data.getIndWord());
                 word = kparole.get(data.getIndWord());
                 data.setIndWord();
             }
@@ -236,13 +255,31 @@ public class GameThread extends Thread {
             //stampa di debug
             System.out.println(word);
 
+            if (data.getIndWord() == k)
+                data.setHaveFinished();
+
+
             key.interestOps(SelectionKey.OP_READ);
             key.attach(data);
+        } else if(data.getHaveFinished()){
+            String message="You have finished, wait your friend to see the result";
+            buffer=ByteBuffer.wrap(message.getBytes());
+            client.write(buffer);
+            buffer.clear();
+            if(name==gamer1)
+                gd1=data;
+            else if(name==gamer2)
+                gd2=data;
+            endGaming=true;
         }else{
             String message="Time's up, game is finished";
             buffer=ByteBuffer.wrap(message.getBytes());
             client.write(buffer);
             buffer.clear();
+            if(name==gamer1)
+                gd1=data;
+            else if(name==gamer2)
+                gd2=data;
             endGaming=true;
         }
     }
@@ -276,15 +313,14 @@ public class GameThread extends Thread {
             answer+= StandardCharsets.UTF_8.decode(buffer).toString();
             if(name=="") {
                 String[] substring = answer.split("\\s+");
-                word = substring[0];
-                data.setUsername(substring[1]);
+                word = substring[1];
+                data.setUsername(substring[0]);
                 data.setAnswer("");
-                key.interestOps(SelectionKey.OP_WRITE);
             } else {
                 word=answer;
-                key.interestOps(SelectionKey.OP_WRITE);
                 data.setAnswer("");
             }
+            key.interestOps(SelectionKey.OP_WRITE);
         //Devo leggere ancora
         } else if(len==1024){
             answer+= StandardCharsets.UTF_8.decode(buffer).toString();
@@ -309,12 +345,14 @@ public class GameThread extends Thread {
         public int indWord;
         public String answer;
         public int punti;
+        public boolean haveFinished;
 
         public GamerData(){
             username="";
             indWord=1;
             punti=0;
             answer="";
+            haveFinished=false;
         }
 
         public String getUsername(){
@@ -351,6 +389,14 @@ public class GameThread extends Thread {
 
         public void decPunti(){
             punti--;
+        }
+
+        public Boolean getHaveFinished(){
+            return haveFinished;
+        }
+
+        public void setHaveFinished(){
+            haveFinished=!haveFinished;
         }
     }
 }
