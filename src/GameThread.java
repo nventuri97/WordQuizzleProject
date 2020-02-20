@@ -10,6 +10,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class GameThread extends Thread {
     private Database database;                                      //Istanza della classe database passata dal thread utente che invia la sfida
@@ -27,6 +28,7 @@ public class GameThread extends Thread {
     private Boolean endGaming;                                      //flag per il controllo del while
     private GamerData gd1;                                          //dati di gioco relativi a gamer1
     private GamerData gd2;                                          //dati di gioco relativi a gamer2
+    private volatile AtomicInteger userClosed;                      //Indica il numero di giocatori che hanno terminato la partita, se ==2 allora la partita termina
 
     public GameThread(Database db, String nick1, String nick2, ServerSocketChannel ssocket){
         this.k=(int) (Math.random()*11)+1;
@@ -49,6 +51,7 @@ public class GameThread extends Thread {
         this.endGaming=false;
         gd1=new GamerData();
         gd2=new GamerData();
+        this.userClosed=new AtomicInteger();
     }
 
     @Override
@@ -157,6 +160,7 @@ public class GameThread extends Thread {
         while(i<k){
             int rand=(int) (Math.random()*(len-1));
             String word=dic.get(rand);
+            word.toLowerCase();
             if(!s.contains(word)) {
                 s.add(word);
                 i++;
@@ -255,9 +259,9 @@ public class GameThread extends Thread {
             //stampa di debug
             System.out.println(word);
 
-            if (data.getIndWord() == k)
+            if (data.getIndWord() == k) {
                 data.setHaveFinished();
-
+            }
 
             key.interestOps(SelectionKey.OP_READ);
             key.attach(data);
@@ -270,7 +274,9 @@ public class GameThread extends Thread {
                 gd1=data;
             else if(name==gamer2)
                 gd2=data;
-            endGaming=true;
+            //Se entrambi i giocatori hanno finito allora chiudo la partita
+            if(userClosed.incrementAndGet()==2)
+                endGaming=true;
         }else{
             String message="Time's up, game is finished";
             buffer=ByteBuffer.wrap(message.getBytes());

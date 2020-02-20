@@ -78,11 +78,12 @@ public class UserThread extends Thread {
             reader.close();
             out.close();
             clientSock.close();
-        }catch(NullPointerException ne){
+        }catch(NullPointerException | SocketException ne){
             if(db.contains(nickname)) {
                 //Se il client crasha per qualche motivo in questo modo garantisco
                 //all'utente di potersi connettere nuovamente quando vorrà
                 db.logout(nickname);
+                alive=false;
                 System.out.println(clientSock + " crashed, logout executed");
             }
         }catch(IOException ioe){
