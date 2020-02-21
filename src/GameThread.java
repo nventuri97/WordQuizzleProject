@@ -244,12 +244,7 @@ public class GameThread extends Thread {
             //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
             if (name == "") {
                 word = kparole.get(0);
-                //Stampa di debug
-                System.out.println("Ho inviato la prima parola");
             } else {
-                //Stampa di debug
-                System.out.println(gamer1 == name);
-                System.out.println("Gamer name is " + name + " and index " + data.getIndWord());
                 word = kparole.get(data.getIndWord());
                 data.setIndWord();
             }
@@ -266,7 +261,7 @@ public class GameThread extends Thread {
             key.interestOps(SelectionKey.OP_READ);
             key.attach(data);
         } else if(data.getHaveFinished()){
-            String message="You have finished, wait your friend to see the result";
+            String message="You have finished, wait to see game result";
             buffer=ByteBuffer.wrap(message.getBytes());
             client.write(buffer);
             buffer.clear();
@@ -276,7 +271,9 @@ public class GameThread extends Thread {
                 gd2=data;
             //Se entrambi i giocatori hanno finito allora chiudo la partita
             if(userClosed.incrementAndGet()==2)
-                endGaming=true;
+                endGaming = true;
+            key.channel().close();
+            key.cancel();
         }else{
             String message="Time's up, game is finished";
             buffer=ByteBuffer.wrap(message.getBytes());
@@ -287,6 +284,8 @@ public class GameThread extends Thread {
             else if(name==gamer2)
                 gd2=data;
             endGaming=true;
+            key.channel().close();
+            key.cancel();
         }
     }
 
@@ -301,8 +300,6 @@ public class GameThread extends Thread {
         String name=data.getUsername();
         String answer=data.getAnswer();
         String word="";
-        //Stampa di debug
-        System.out.println("Gamer name is "+name);
 
         ByteBuffer buffer=ByteBuffer.allocate(1024);
         buffer.clear();
