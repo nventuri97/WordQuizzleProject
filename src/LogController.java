@@ -79,23 +79,27 @@ public class LogController {
             password.clear();
             nickname.clear();
         } else {
-            try {
-                FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
-                Parent root=loader.load();
+            launchMainGui();
+        }
+    }
 
-                MainController mainController=loader.getController();
-                mainController.setAnchor(root);
-                mainController.setStage(stage);
-                mainController.setClientConnection(clientConnection);
-                mainController.setFeedback(feedback);
+    public void launchMainGui(){
+        try {
+            FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
+            Parent root=loader.load();
 
-                Scene scene = new Scene(root);
-                scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
-                stage.setScene(scene);
-                stage.show();
-            }catch(Exception e){
-                e.printStackTrace();
-            }
+            MainController mainController=loader.getController();
+            mainController.setAnchor(root);
+            mainController.setStage(stage);
+            mainController.setClientConnection(clientConnection);
+            mainController.setFeedback(feedback);
+
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
+            stage.setScene(scene);
+            stage.show();
+        }catch(Exception e){
+            e.printStackTrace();
         }
     }
 }

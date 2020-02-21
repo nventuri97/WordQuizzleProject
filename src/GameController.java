@@ -40,6 +40,7 @@ public class GameController {
         clientConnection.sendNewWord(msg);
         lblword.setText("");
         wordfield.clear();
-        lblword.setText(clientConnection.receiveNewWord());
+        String word=clientConnection.receiveNewWord();
+        lblword.setText(word);
     }
 }
