@@ -12,8 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class MainController {
-    private ClientConnection clientConnection;
-    private static Stage stage;
+    private ClientGui clientGui;
     private TextField friend;
     private Button add_friend;
     private Button score;
@@ -22,20 +21,11 @@ public class MainController {
     private Button friends;
     private Button new_game;
     private ListView list;
-    private Feedback feedback;
     private String msg;
     private Label lblscore;
 
-    public void setClientConnection(ClientConnection clientConnection){
-        this.clientConnection=clientConnection;
-    }
-
-    public void setStage(Stage stage){
-        this.stage=stage;
-    }
-
-    public void setFeedback(Feedback feedback){
-        this.feedback=feedback;
+    public void setClientGui(ClientGui client){
+        clientGui=client;
     }
 
     public void setAnchor(Parent root){
@@ -47,17 +37,17 @@ public class MainController {
     @FXML
     public void addFriend(ActionEvent click){
         String friend_nick=friend.getText();
-        msg=clientConnection.addFriends(friend_nick);
+        msg=clientGui.clientConnection.addFriends(friend_nick);
         if(!msg.equals(""))
             lblscore.setText(msg);
         else
-            feedback.showAlert(Alert.AlertType.ERROR, "Friendship Errore", clientConnection.getMsgAlert());
+            clientGui.feedback.showAlert(Alert.AlertType.ERROR, "Friendship Errore", clientGui.clientConnection.getMsgAlert());
     }
 
     @FXML
     public void view_ranking(ActionEvent click){
         list.getItems().clear();
-        msg=clientConnection.my_ranking();
+        msg=clientGui.clientConnection.my_ranking();
         Parser parser=new Parser();
         List<Map.Entry<String, Integer>> ranking=parser.parseRankFromJSON(msg);
         for(Map.Entry<String, Integer> entry: ranking){
@@ -68,7 +58,7 @@ public class MainController {
     @FXML
     public void view_friends(ActionEvent click){
         list.getItems().clear();
-        String result=clientConnection.showFriends();
+        String result=clientGui.clientConnection.showFriends();
         if(result!=null) {
             Parser parser = new Parser();
             Set<String> setOfFriend = parser.parseFriFromJSON(result);
@@ -81,25 +71,25 @@ public class MainController {
 
     @FXML
     public void logout(ActionEvent click){
-        if(!clientConnection.my_logout()) {
-            feedback.showAlert(Alert.AlertType.ERROR, "Logout Error", clientConnection.getMsgAlert());
+        if(!clientGui.clientConnection.my_logout()) {
+            clientGui.feedback.showAlert(Alert.AlertType.ERROR, "Logout Error", clientGui.clientConnection.getMsgAlert());
         }else
-            stage.close();
+            clientGui.stage.close();
     }
 
     @FXML
     public void view_score(ActionEvent click){
-        msg=clientConnection.score();
+        msg=clientGui.clientConnection.score();
         lblscore.setText("Your score is "+msg);
     }
 
     @FXML
     public void newGame(ActionEvent click){
         String nickFriend=friend.getText();
-        msg=clientConnection.newGame(nickFriend);
+        msg=clientGui.clientConnection.newGame(nickFriend);
         lblscore.setText(msg);
         if(msg.contains("accepted")) {
-            waitTime(clientConnection);
+            waitTime(clientGui);
         }
     }
 
@@ -110,34 +100,12 @@ public class MainController {
         lblscore.setText("");
     }
 
-    public static Stage getStage(){
-        return stage;
+    public void waitTime(ClientGui cGui){
+        clientGui=cGui;
+        clientGui.clientConnection.newGameConnection();
+        String word=clientGui.clientConnection.receiveNewWord();
+        clientGui.launchGameGUI(word);
     }
 
-    public void waitTime(ClientConnection connection){
-        connection.newGameConnection();
-        String word=connection.receiveNewWord();
-        launchGameGUI(connection, word);
-    }
 
-    public void launchGameGUI(ClientConnection connection, String word){
-        try {
-            FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Game.fxml"));
-            Parent root=loader.load();
-
-            GameController gameController=loader.getController();
-            gameController.setClientConnection(connection);
-            gameController.setFeedback(feedback);
-            stage=getStage();
-            gameController.setStage(stage);
-
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
-            stage.setScene(scene);
-            stage.show();
-            gameController.setAnchor(root, word);
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-    }
 }

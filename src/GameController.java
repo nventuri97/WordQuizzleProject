@@ -1,5 +1,7 @@
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -8,24 +10,13 @@ import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 
 public class GameController {
-    private static ClientConnection clientConnection;
-    private Stage stage;
-    private Feedback feedback;
+    private ClientGui clientGui;
     private String msg;
     private Label lblword;
     private TextField wordfield;
     private Button sendWord;
-
-    public static void setClientConnection(ClientConnection connection){
-        clientConnection=connection;
-    }
-
-    public void setStage(Stage stage){
-        this.stage=stage;
-    }
-
-    public void setFeedback(Feedback feedback){
-        this.feedback=feedback;
+    public void setClientGui(ClientGui client){
+        clientGui=client;
     }
 
     public void setAnchor(Parent root,String newWord){
@@ -37,10 +28,14 @@ public class GameController {
     @FXML
     public void sendWord(ActionEvent click){
         msg=wordfield.getText();
-        clientConnection.sendNewWord(msg);
+        clientGui.clientConnection.sendNewWord(msg);
         lblword.setText("");
         wordfield.clear();
-        String word=clientConnection.receiveNewWord();
+        String word=clientGui.clientConnection.receiveNewWord();
         lblword.setText(word);
+        if(word.contains("Time's up") || word.contains("You have finished"))
+            clientGui.launchResultGui();
     }
+
+
 }

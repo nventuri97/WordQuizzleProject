@@ -7,26 +7,17 @@ import javafx.scene.control.*;
 import javafx.event.ActionEvent;
 
 public class LogController {
+    private ClientGui clientGui;
     private TextField nickname;
     private PasswordField password;
-    private Stage stage;
     private String msg;
-    private ClientConnection clientConnection;
     private Label message;
     private String pw;
     private String nick;
-    private Feedback feedback;
     private int i=0;
 
-    public void setClientConnection(ClientConnection clientConnection){
-        this.clientConnection=clientConnection;
-    }
-    public void setStage(Stage stage){
-        this.stage=stage;
-    }
-
-    public void setFeedback(Feedback feedback){
-        this.feedback=feedback;
+    public void setClientGui(ClientGui client){
+        clientGui=client;
     }
 
     public void setAnchor(Parent root){
@@ -40,10 +31,10 @@ public class LogController {
     public void sign_up(ActionEvent click){
         nick=nickname.getText();
         pw=password.getText();
-        boolean result=clientConnection.my_registration(nick, pw);
+        boolean result=clientGui.clientConnection.my_registration(nick, pw);
         if(!result){
-            msg=clientConnection.getMsgAlert();
-            feedback.showAlert(Alert.AlertType.ERROR, "Sign-up Error", msg);
+            msg=clientGui.clientConnection.getMsgAlert();
+            clientGui.feedback.showAlert(Alert.AlertType.ERROR, "Sign-up Error", msg);
             message.setText("Close and reopen the application");
         }
         else{
@@ -64,14 +55,14 @@ public class LogController {
         message.setText("");
         nick=nickname.getText();
         pw=password.getText();
-        boolean result=clientConnection.my_log(nick,pw);
+        boolean result=clientGui.clientConnection.my_log(nick,pw);
         if(!result){
-            msg=clientConnection.getMsgAlert();
-            feedback.showAlert(Alert.AlertType.ERROR, "Login Error", msg);
+            msg=clientGui.clientConnection.getMsgAlert();
+            clientGui.feedback.showAlert(Alert.AlertType.ERROR, "Login Error", msg);
             i++;
             if(i==5) {
                 message.setText("You've finished your chances");
-                stage.close();
+                clientGui.stage.close();
             }
             else {
                 message.setText("You have " + (5 - i) + " chances");
@@ -79,27 +70,9 @@ public class LogController {
             password.clear();
             nickname.clear();
         } else {
-            launchMainGui();
+            clientGui.launchMainGui();
         }
     }
 
-    public void launchMainGui(){
-        try {
-            FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
-            Parent root=loader.load();
 
-            MainController mainController=loader.getController();
-            mainController.setAnchor(root);
-            mainController.setStage(stage);
-            mainController.setClientConnection(clientConnection);
-            mainController.setFeedback(feedback);
-
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
-            stage.setScene(scene);
-            stage.show();
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-    }
 }

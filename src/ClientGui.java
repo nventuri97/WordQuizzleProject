@@ -11,20 +11,20 @@ public class ClientGui extends Application {
     FXMLLoader loader;
     ClientConnection clientConnection;                          //Istanza dell'oggetto condiviso per la connessione con il server
     Feedback feedback;                                          //Istanza della classe che produce gli Alert quando necessario
+    Stage stage;                                                //Stage principale
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage primaryStage) throws Exception {
         loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Log.fxml"));
         root = loader.load();
-        clientConnection=new ClientConnection();
+        clientConnection=new ClientConnection(this);
+        stage=primaryStage;
 
         //Set LogController
         logController = loader.getController();
         logController.setAnchor(root);
-        logController.setStage(stage);
-        logController.setClientConnection(clientConnection);
         feedback=new Feedback();
-        logController.setFeedback(feedback);
+        logController.setClientGui(this);
 
         //set login window
         stage.setTitle("WORD QUIZZLE");
@@ -38,5 +38,60 @@ public class ClientGui extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    public void launchMainGui(){
+        try {
+            FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
+            Parent root=loader.load();
+
+            MainController mainController=loader.getController();
+            mainController.setAnchor(root);
+            mainController.setClientGui(this);
+
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
+            stage.setScene(scene);
+            stage.show();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public void launchGameGUI(String word){
+        try {
+            FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Game.fxml"));
+            Parent root=loader.load();
+
+            GameController gameController=loader.getController();
+            gameController.setClientGui(this);
+
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
+            stage.setScene(scene);
+            stage.show();
+            gameController.setAnchor(root, word);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public void launchResultGui(){
+        try {
+            FXMLLoader loader= new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Result.fxml"));
+            Parent root=loader.load();
+
+            ResultController resultController=loader.getController();
+            resultController.setClientGui(this);
+
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
+            stage.setScene(scene);
+            stage.show();
+            resultController.setAnchor(root);
+            resultController.showResult();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
     }
 }
