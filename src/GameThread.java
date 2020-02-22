@@ -26,8 +26,8 @@ public class GameThread extends Thread {
     private Selector selector;                                      //Selettore per la gestione dei due client
     private GameTimer timer;                                        //Timer per la sfida
     private Boolean endGaming;                                      //flag per il controllo del while
-    private GamerData gd1;                                          //dati di gioco relativi a gamer1
-    private GamerData gd2;                                          //dati di gioco relativi a gamer2
+    private static GamerData gd1;                                   //dati di gioco relativi a gamer1
+    private static GamerData gd2;                                   //dati di gioco relativi a gamer2
     private volatile AtomicInteger userClosed;                      //Indica il numero di giocatori che hanno terminato la partita, se ==2 allora la partita termina
 
     public GameThread(Database db, String nick1, String nick2, ServerSocketChannel ssocket){
@@ -265,10 +265,19 @@ public class GameThread extends Thread {
             buffer=ByteBuffer.wrap(message.getBytes());
             client.write(buffer);
             buffer.clear();
-            if(name==gamer1)
-                gd1=data;
-            else if(name==gamer2)
-                gd2=data;
+            //Stampa di debug
+            System.out.println(name+" gamer "+gamer1);
+            //Stampa di debug
+            System.out.println(name+" gamer "+gamer2);
+            if(name.equals(gamer1)) {
+                gd1 = data;
+                //Stampa di debug
+                System.out.println(gd1.getPunti());
+            }else if(name.equals(gamer2)) {
+                gd2 = data;
+                //Stampa di debug
+                System.out.println(gd2.getPunti());
+            }
             //Se entrambi i giocatori hanno finito allora chiudo la partita
             if(userClosed.incrementAndGet()==2)
                 endGaming = true;
@@ -279,10 +288,15 @@ public class GameThread extends Thread {
             buffer=ByteBuffer.wrap(message.getBytes());
             client.write(buffer);
             buffer.clear();
-            if(name==gamer1)
-                gd1=data;
-            else if(name==gamer2)
-                gd2=data;
+            //Stampa di debug
+            System.out.println(name+" gamer "+gamer1);
+            //Stampa di debug
+            System.out.println(name+" gamer "+gamer2);
+            if(name.equals(gamer1)) {
+                gd1 = data;
+            } else if(name.equals(gamer2)) {
+                gd2 = data;
+            }
             endGaming=true;
             key.channel().close();
             key.cancel();
