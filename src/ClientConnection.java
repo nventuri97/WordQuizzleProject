@@ -20,8 +20,9 @@ public class ClientConnection {
     private UDPThread udpThread;                                //Thread UDP per la gestione delle notifiche
     private String msgAlert;                                    //messaggio per settare l'allert
     private boolean firstWord;                                  //Flag che indica se quella da inviare è o meno la prima parola
+    private ClientGui cl;                                       //Istanza della classe main da passare all'UDP thread
 
-    public ClientConnection(){
+    public ClientConnection(ClientGui client){
         //Genero una porta random così da non avere BindException al collegamento di più client
         this.TCPport=20546;
         this.RMIport=20000;
@@ -33,6 +34,7 @@ public class ClientConnection {
             ioe.printStackTrace();
         }
         this.UDPport=TCPSock.getLocalPort();
+        this.cl=client;
     }
 
     /**
@@ -98,7 +100,7 @@ public class ClientConnection {
         //Controllo che ci sia il codice di avvenuto login
         if (answer.contains("505")) {
             //Avvio il thread UDP e comunico la porta di ascolto al server
-            udpThread = new UDPThread(UDPport, this);
+            udpThread = new UDPThread(UDPport, cl);
             udpThread.start();
             sendRequest("UDPport " + UDPport);
             return true;

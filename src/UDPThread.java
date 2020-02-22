@@ -15,9 +15,9 @@ public class UDPThread extends Thread {
     private static int frport;                                      //Porta a cui rispondere in UDP
     private static InetAddress friend;                              //InetAddress da cui ho ricevuto il datagramma di notifica
     private static boolean accepted;                                //flag per l'avvio dell'interfaccia
-    private static ClientConnection connection;                     //Istanza da passare alla classe di caricamente dell'interfaccia
+    private static ClientGui clientGui;                             //Istanza da passare alla classe di caricamente dell'interfaccia
 
-    public UDPThread(int port, ClientConnection connection){
+    public UDPThread(int port, ClientGui client){
         this.UDPport=port;
         try{
             this.UDPSock=new DatagramSocket(UDPport);
@@ -26,7 +26,7 @@ public class UDPThread extends Thread {
         }
         this.running=true;
         this.accepted=false;
-        this.connection=connection;
+        this.clientGui=client;
     }
 
     @Override
@@ -72,7 +72,7 @@ public class UDPThread extends Thread {
                             FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
                             Parent root = loader.load();
                             MainController controller = loader.getController();
-                            controller.waitTime(connection);
+                            controller.waitTime(clientGui);
                         }catch (IOException ioe){
                             ioe.printStackTrace();
                         }
