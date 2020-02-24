@@ -29,6 +29,8 @@ public class GameThread extends Thread {
     private static GamerData gd1;                                   //dati di gioco relativi a gamer1
     private static GamerData gd2;                                   //dati di gioco relativi a gamer2
     private volatile AtomicInteger userClosed;                      //Indica il numero di giocatori che hanno terminato la partita, se ==2 allora la partita termina
+    private Iterator<SelectionKey> iterator;                        //Iteratore sulle chiavi del selettore
+    private User us1, us2;
 
     public GameThread(Database db, String nick1, String nick2, ServerSocketChannel ssocket){
         this.k=(int) (Math.random()*11)+1;
@@ -73,8 +75,8 @@ public class GameThread extends Thread {
         getTranslation(translation, kparole, k);
 
         //Prelevo le due istanze della classe User dal database
-        User us1 = database.getUser(gamer1);
-        User us2 = database.getUser(gamer2);
+        us1 = database.getUser(gamer1);
+        us2 = database.getUser(gamer2);
 
         timer=new GameTimer();
         timer.start();
@@ -86,7 +88,7 @@ public class GameThread extends Thread {
                 ioe.printStackTrace();
             }
             Set<SelectionKey> readyKeys = selector.selectedKeys();
-            Iterator<SelectionKey> iterator = readyKeys.iterator();
+            iterator = readyKeys.iterator();
 
             while (iterator.hasNext()) {
                 SelectionKey key = iterator.next();
@@ -145,6 +147,8 @@ public class GameThread extends Thread {
         }
         us1.addPunteggio(pt1);
         us2.addPunteggio(pt2);
+        us1.setBusy();
+        us2.setBusy();
     }
 
     /**
@@ -288,18 +292,18 @@ public class GameThread extends Thread {
             buffer=ByteBuffer.wrap(message.getBytes());
             client.write(buffer);
             buffer.clear();
+            key.channel().close();
+            key.cancel();
             //Stampa di debug
             System.out.println(name+" gamer "+gamer1);
             //Stampa di debug
             System.out.println(name+" gamer "+gamer2);
-            if(name.equals(gamer1)) {
-                gd1 = data;
-            } else if(name.equals(gamer2)) {
-                gd2 = data;
-            }
-            endGaming=true;
-            key.channel().close();
-            key.cancel();
+            if(name.equals(gamer1))
+                gd1=data;
+            else
+                gd2=data;
+            if(!iterator.hasNext())
+                endGaming=true;
         }
     }
 
