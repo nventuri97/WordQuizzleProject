@@ -32,7 +32,7 @@ public class GameThread extends Thread {
     private static GamerData gd1;                                   //dati di gioco relativi a gamer1
     private static GamerData gd2;                                   //dati di gioco relativi a gamer2
     private volatile AtomicInteger userClosed;                      //Indica il numero di giocatori che hanno terminato la partita, se ==2 allora la partita termina
-    private Iterator<SelectionKey> iterator;                        //Iteratore sulle chiavi del selettore
+    private static Iterator<SelectionKey> iterator;                 //Iteratore sulle chiavi del selettore
     private User us1, us2;
 
     public GameThread(Database db, String nick1, String nick2, ServerSocketChannel ssocket){
@@ -246,50 +246,60 @@ public class GameThread extends Thread {
         String name = data.getUsername();
 
         ByteBuffer buffer;
-        if (!data.getHaveFinished()) {
-            String word = "";
-            //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
-            if (name == "") {
-                word = kparole.get(0);
+        if(!timer.isShutdown()) {
+            if (!data.getHaveFinished()) {
+                String word = "";
+                //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
+                if (name == "") {
+                    word = kparole.get(0);
+                } else {
+                    word = kparole.get(data.getIndWord());
+                    data.setIndWord();
+                }
+                buffer = ByteBuffer.wrap(word.getBytes());
+                client.write(buffer);
+
+                //stampa di debug
+                System.out.println(word);
+
+                if (data.getIndWord() == k) {
+                    data.setHaveFinished();
+                }
+
+                key.interestOps(SelectionKey.OP_READ);
+                key.attach(data);
             } else {
-                word = kparole.get(data.getIndWord());
-                data.setIndWord();
+                String message = "You have finished, wait to see game result";
+                buffer = ByteBuffer.wrap(message.getBytes());
+                client.write(buffer);
+                buffer.clear();
+                //Stampa di debug
+                System.out.println(name + " gamer " + gamer1);
+                //Stampa di debug
+                System.out.println(name + " gamer " + gamer2);
+                if (name.equals(gamer1)) {
+                    gd1 = data;
+                    //Stampa di debug
+                    System.out.println(gd1.getPunti());
+                } else if (name.equals(gamer2)) {
+                    gd2 = data;
+                    //Stampa di debug
+                    System.out.println(gd2.getPunti());
+                }
+                //Se entrambi i giocatori hanno finito allora chiudo la partita
+                if (userClosed.incrementAndGet() == 2)
+                    endGaming = true;
+                key.channel().close();
+                key.cancel();
             }
-            buffer = ByteBuffer.wrap(word.getBytes());
-            client.write(buffer);
-
-            //stampa di debug
-            System.out.println(word);
-
-            if (data.getIndWord() == k) {
-                data.setHaveFinished();
-            }
-
-            key.interestOps(SelectionKey.OP_READ);
-            key.attach(data);
         } else {
-            String message = "You have finished, wait to see game result";
-            buffer = ByteBuffer.wrap(message.getBytes());
-            client.write(buffer);
-            buffer.clear();
-            //Stampa di debug
-            System.out.println(name + " gamer " + gamer1);
-            //Stampa di debug
-            System.out.println(name + " gamer " + gamer2);
-            if (name.equals(gamer1)) {
-                gd1 = data;
-                //Stampa di debug
-                System.out.println(gd1.getPunti());
-            } else if (name.equals(gamer2)) {
-                gd2 = data;
-                //Stampa di debug
-                System.out.println(gd2.getPunti());
+            try {
+                String s="Time's up, game finished";
+                buffer=ByteBuffer.wrap(s.getBytes());
+                client.write(buffer);
+            }catch (IOException ioe){
+                ioe.printStackTrace();
             }
-            //Se entrambi i giocatori hanno finito allora chiudo la partita
-            if (userClosed.incrementAndGet() == 2)
-                endGaming = true;
-            key.channel().close();
-            key.cancel();
         }
     }
 
@@ -307,40 +317,44 @@ public class GameThread extends Thread {
 
         ByteBuffer buffer=ByteBuffer.allocate(1024);
         buffer.clear();
-        int len=client.read(buffer);
-        buffer.flip();
+        if(!timer.isShutdown()) {
+            int len = client.read(buffer);
+            buffer.flip();
 
-        //Client crashato
-        if(len==-1){
-            System.out.println("Client "+client+" is crashed");
-            key.channel().close();
-            key.cancel();
-        //Ho letto tutto quello che c'era da leggere
-        } else if(len<1024){
-            answer+= StandardCharsets.UTF_8.decode(buffer).toString();
-            if(name=="") {
-                String[] substring = answer.split("\\s+");
-                word = substring[1];
-                data.setUsername(substring[0]);
-                data.setAnswer("");
-            } else {
-                word=answer;
-                data.setAnswer("");
+            //Client crashato
+            if (len == -1) {
+                System.out.println("Client " + client + " is crashed");
+                key.channel().close();
+                key.cancel();
+                //Ho letto tutto quello che c'era da leggere
+            } else if (len < 1024) {
+                answer += StandardCharsets.UTF_8.decode(buffer).toString();
+                if (name == "") {
+                    String[] substring = answer.split("\\s+");
+                    word = substring[1];
+                    data.setUsername(substring[0]);
+                    data.setAnswer("");
+                } else {
+                    word = answer;
+                    data.setAnswer("");
+                }
+                key.interestOps(SelectionKey.OP_WRITE);
+                //Devo leggere ancora
+            } else if (len == 1024) {
+                answer += StandardCharsets.UTF_8.decode(buffer).toString();
+                data.setAnswer(answer);
+
             }
+
+            if (word.equals(translation.get(data.getIndWord() - 1)))
+                data.incPunti();
+            else
+                data.decPunti();
+
+            key.attach(data);
+        }else{
             key.interestOps(SelectionKey.OP_WRITE);
-        //Devo leggere ancora
-        } else if(len==1024){
-            answer+= StandardCharsets.UTF_8.decode(buffer).toString();
-            data.setAnswer(answer);
-
         }
-
-        if(word.equals(translation.get(data.getIndWord()-1)))
-            data.incPunti();
-        else
-            data.decPunti();
-
-        key.attach(data);
     }
 
     public void timeUP(){
@@ -350,34 +364,6 @@ public class GameThread extends Thread {
             System.out.println(s);
             //Termino il ciclo principale
             endGaming=true;
-            ByteBuffer buffer=ByteBuffer.wrap(s.getBytes());
-
-            while(iterator.hasNext()){
-                SelectionKey key=iterator.next();
-                iterator.remove();
-
-                if(key.isReadable())
-                    key.interestOps(SelectionKey.OP_WRITE);
-                else if(key.isWritable()){
-                    SocketChannel client=(SocketChannel) key.channel();
-                    GamerData data=(GamerData) key.attachment();
-                    String name=data.getUsername();
-                    try {
-                        //Stampa di debug
-                        System.out.println(name);
-                        client.write(buffer);
-                        if(name.equals(gamer1))
-                            gd1=data;
-                        else if(name.equals(gamer2))
-                            gd2=data;
-                        key.channel().close();
-                        key.cancel();
-                    }catch (IOException ioe){
-                        ioe.printStackTrace();
-                    }
-
-                }
-            }
         }
     }
 
