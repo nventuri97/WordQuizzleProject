@@ -6,10 +6,15 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Server {
     private static int TCPport=20546;
     private static int RMIport=20000;
+    private static ThreadPoolExecutor executor;
+    private static LinkedBlockingQueue<Runnable> queue;
 
     public static void main(String args[]){
         //Creo o recupero l'istanza dell'oggetto remoto così da permettere al client la registrazione
@@ -30,6 +35,9 @@ public class Server {
         }catch(RemoteException ex){
             ex.printStackTrace();
         }
+        queue=new LinkedBlockingQueue<>();
+        executor=new ThreadPoolExecutor(50, 100, 320000, TimeUnit.MILLISECONDS, queue);
+        System.out.println("Server online");
 
         try {
             //Socket passiva su cui mi metto in ascolto
@@ -38,7 +46,7 @@ public class Server {
                 //Accetto la richiesta di connessione e creo un thread utente dedicato
                 Socket client=server.accept();
                 UserThread u=new UserThread(client, database);
-                u.start();
+                executor.execute(u);
             }
         }catch(IOException ioe){
             ioe.printStackTrace();
