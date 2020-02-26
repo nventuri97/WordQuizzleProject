@@ -297,6 +297,14 @@ public class GameThread extends Thread {
                 String s="Time's up, game finished";
                 buffer=ByteBuffer.wrap(s.getBytes());
                 client.write(buffer);
+                if(name.equals(gamer1))
+                    gd1=data;
+                else if(name.equals(gamer2))
+                    gd2=data;
+                key.channel().close();
+                key.cancel();
+                if(userClosed.incrementAndGet()==2)
+                    endGaming=true;
             }catch (IOException ioe){
                 ioe.printStackTrace();
             }
@@ -363,7 +371,6 @@ public class GameThread extends Thread {
             String s="Time's up, game finished";
             System.out.println(s);
             //Termino il ciclo principale
-            endGaming=true;
         }
     }
 
