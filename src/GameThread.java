@@ -10,6 +10,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GameThread extends Thread {
@@ -24,7 +27,7 @@ public class GameThread extends Thread {
     private ArrayList<String> translation;                          //ArrayList contenente le traduzioni delle K parole scelte
     private ServerSocketChannel gameSockChannel;                    //Server socket che gestisce la sfida
     private Selector selector;                                      //Selettore per la gestione dei due client
-    private GameTimer timer;                                        //Timer per la sfida
+    private ScheduledExecutorService timer;                         //Timer per la sfida
     private Boolean endGaming;                                      //flag per il controllo del while
     private static GamerData gd1;                                   //dati di gioco relativi a gamer1
     private static GamerData gd2;                                   //dati di gioco relativi a gamer2
@@ -54,6 +57,7 @@ public class GameThread extends Thread {
         gd1=new GamerData();
         gd2=new GamerData();
         this.userClosed=new AtomicInteger();
+        this.timer=Executors.newScheduledThreadPool(1);
     }
 
     @Override
@@ -78,8 +82,7 @@ public class GameThread extends Thread {
         us1 = database.getUser(gamer1);
         us2 = database.getUser(gamer2);
 
-        timer=new GameTimer();
-        timer.start();
+        timer.schedule(this::timeUP, 60, TimeUnit.SECONDS);
 
         while(!endGaming) {
             try{
@@ -243,7 +246,7 @@ public class GameThread extends Thread {
         String name = data.getUsername();
 
         ByteBuffer buffer;
-        if (timer.isAlive() && !data.getHaveFinished()) {
+        if (!data.getHaveFinished()) {
             String word = "";
             //Inviando la prima parola quando ancora non conosco il nome devo essere sicuro di inviare sempre e solo la prima
             if (name == "") {
@@ -264,46 +267,29 @@ public class GameThread extends Thread {
 
             key.interestOps(SelectionKey.OP_READ);
             key.attach(data);
-        } else if(data.getHaveFinished()){
-            String message="You have finished, wait to see game result";
-            buffer=ByteBuffer.wrap(message.getBytes());
+        } else {
+            String message = "You have finished, wait to see game result";
+            buffer = ByteBuffer.wrap(message.getBytes());
             client.write(buffer);
             buffer.clear();
             //Stampa di debug
-            System.out.println(name+" gamer "+gamer1);
+            System.out.println(name + " gamer " + gamer1);
             //Stampa di debug
-            System.out.println(name+" gamer "+gamer2);
-            if(name.equals(gamer1)) {
+            System.out.println(name + " gamer " + gamer2);
+            if (name.equals(gamer1)) {
                 gd1 = data;
                 //Stampa di debug
                 System.out.println(gd1.getPunti());
-            }else if(name.equals(gamer2)) {
+            } else if (name.equals(gamer2)) {
                 gd2 = data;
                 //Stampa di debug
                 System.out.println(gd2.getPunti());
             }
             //Se entrambi i giocatori hanno finito allora chiudo la partita
-            if(userClosed.incrementAndGet()==2)
+            if (userClosed.incrementAndGet() == 2)
                 endGaming = true;
             key.channel().close();
             key.cancel();
-        }else{
-            String message="Time's up, game is finished";
-            buffer=ByteBuffer.wrap(message.getBytes());
-            client.write(buffer);
-            buffer.clear();
-            key.channel().close();
-            key.cancel();
-            //Stampa di debug
-            System.out.println(name+" gamer "+gamer1);
-            //Stampa di debug
-            System.out.println(name+" gamer "+gamer2);
-            if(name.equals(gamer1))
-                gd1=data;
-            else
-                gd2=data;
-            if(!iterator.hasNext())
-                endGaming=true;
         }
     }
 
@@ -355,6 +341,44 @@ public class GameThread extends Thread {
             data.decPunti();
 
         key.attach(data);
+    }
+
+    public void timeUP(){
+        timer.shutdown();
+        if(userClosed.get()<2){
+            String s="Time's up, game finished";
+            System.out.println(s);
+            //Termino il ciclo principale
+            endGaming=true;
+            ByteBuffer buffer=ByteBuffer.wrap(s.getBytes());
+
+            while(iterator.hasNext()){
+                SelectionKey key=iterator.next();
+                iterator.remove();
+
+                if(key.isReadable())
+                    key.interestOps(SelectionKey.OP_WRITE);
+                else if(key.isWritable()){
+                    SocketChannel client=(SocketChannel) key.channel();
+                    GamerData data=(GamerData) key.attachment();
+                    String name=data.getUsername();
+                    try {
+                        //Stampa di debug
+                        System.out.println(name);
+                        client.write(buffer);
+                        if(name.equals(gamer1))
+                            gd1=data;
+                        else if(name.equals(gamer2))
+                            gd2=data;
+                        key.channel().close();
+                        key.cancel();
+                    }catch (IOException ioe){
+                        ioe.printStackTrace();
+                    }
+
+                }
+            }
+        }
     }
 
 
