@@ -12,4 +12,4 @@ client:
 		$(JE) $(LIBS) Client.ClientGui
 
 clean:
-		-rm -f .:Client/*.class .:Exception/*.class .:Server/*.class
+		-rm -f Client/*.class Exception/*.class Server/*.class Utils/*.class

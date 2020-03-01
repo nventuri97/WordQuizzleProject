@@ -31,8 +31,8 @@ public class ClientGui extends Application {
         stage.setTitle("WORD QUIZZLE");
         stage.setResizable(false);
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
-        stage.getIcons().add(new Image("./GUI/lg.png"));
+        scene.getStylesheets().add(getClass().getResource("/Client/GUI/style.css").toExternalForm());
+        stage.getIcons().add(new Image("/Client/GUI/lg.png"));
         stage.setScene(scene);
         stage.show();
     }
@@ -51,7 +51,7 @@ public class ClientGui extends Application {
             mainController.setClientGui(this);
 
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client/GUI/style.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
         }catch(Exception e){
@@ -68,7 +68,7 @@ public class ClientGui extends Application {
             gameController.setClientGui(this);
 
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client/GUI/style.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
             gameController.setAnchor(root, word);
@@ -86,7 +86,7 @@ public class ClientGui extends Application {
             resultController.setClientGui(this);
 
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("GUI/style.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client/GUI/style.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
             resultController.setAnchor(root);
