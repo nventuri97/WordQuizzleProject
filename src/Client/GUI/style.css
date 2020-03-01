@@ -1,0 +1,65 @@
+#AnchorPane, #AnchorPane2, #AnchorPane3, #AnchorPane4 {
+    -fx-background-image: url("./prova.jpg");
+}
+
+#logo2, #logo4, #logo5{
+    -fx-background-image: url("./logo2.PNG");
+}
+
+#logo3 {
+    -fx-background-image: url("./logo3.PNG");
+}
+
+#add_friend, #login, #sign_up, #new_game, #friends, #score, #ranking, #logout, #clear, #sendWord, #home {
+    -fx-background-color: rgb(255, 255, 255);
+    -fx-background-radius: 50px;
+    -fx-font-family: Ranchers;
+    -fx-font-size: 15px;
+    -fx-text-fill: rgb(78, 77, 77);
+    -fx-border-style: solid;
+    -fx-border-color: rgb(78, 77, 77);
+    -fx-border-radius: 50px;
+}
+
+#nickname, #password, #friend, #wordfield{
+    -fx-border-style: solid;
+    -fx-border-radius: 50px;
+    -fx-border-color: rgb(78, 77, 77);
+    -fx-background-radius: 50px;
+    -fx-prompt-text-align: center;
+    -fx-text-align: center;
+    -fx-font-family: Ranchers;
+    -fx-font-size: 15px;
+}
+
+#message, #lblscore, #result{
+    -fx-text-alignment: center;
+    -fx-font-family: Ranchers;
+    -fx-font-size: 15px;
+    -fx-text-fill: rgb(78, 77, 77);
+}
+#waiting{
+    -fx-text-alignment: center;
+    -fx-font-family: Ranchers;
+    -fx-font-size: 35px;
+    -fx-background-color: white;
+    -fx-background-radius: 50px;
+    -fx-border-style:solid;
+    -fx-border-radius: 50px;
+    -fx-border-color: rgb(78, 77, 77);
+    -fx-text-fill: rgb(78, 77, 77);
+}
+
+#list {
+    -fx-background-radius: 20px;
+    -fx-font-family: Ranchers;
+    -fx-opacity: 0.9;
+    -fx-font-size: 20px;
+}
+
+ #lblword {
+    -fx-text-alignment: center;
+    -fx-font-family: Ranchers;
+    -fx-font-size: 35px;
+    -fx-text-fill: rgb(78, 77, 77);
+}
