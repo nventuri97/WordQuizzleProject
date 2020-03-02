@@ -203,7 +203,7 @@ public class ClientConnection {
 
     public String newGame(String friend){
         if(friend==null || friend=="") {
-            setMsgAlert("801 non valid nickname");
+            setMsgAlert("Error 801: non valid nickname");
             return null;
         }
         String request="NEW game against " + friend;
@@ -211,6 +211,9 @@ public class ClientConnection {
         sendRequest(request);
         //Mi metto in attesa della risposta dal server
         String answer = receiveResponse();
+        if(answer.contains("Error"))
+            setMsgAlert(answer);
+        answer="";
         return answer;
     }
 

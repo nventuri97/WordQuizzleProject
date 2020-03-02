@@ -35,7 +35,7 @@ public class MainController {
     public void addFriend(ActionEvent click){
         String friend_nick=friend.getText();
         msg=clientGui.clientConnection.addFriends(friend_nick);
-        if(!msg.equals(""))
+        if(msg!=null)
             lblscore.setText(msg);
         else
             clientGui.feedback.showAlert(Alert.AlertType.ERROR, "Friendship Errore", clientGui.clientConnection.getMsgAlert());
@@ -84,10 +84,13 @@ public class MainController {
     public void newGame(ActionEvent click){
         String nickFriend=friend.getText();
         msg=clientGui.clientConnection.newGame(nickFriend);
-        lblscore.setText(msg);
-        if(msg.contains("accepted")) {
-            waitTime(clientGui);
-        }
+        if(msg!=null) {
+            lblscore.setText(msg);
+            if (msg.contains("accepted")) {
+                waitTime(clientGui);
+            }
+        }else
+            clientGui.feedback.showAlert(Alert.AlertType.ERROR, "New Game Error", clientGui.clientConnection.getMsgAlert());
     }
 
     @FXML
