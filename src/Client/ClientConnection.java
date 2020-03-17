@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.rmi.Remote;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.security.MessageDigest;
+
 import Exception.*;
 import Server.*;
 
@@ -60,6 +62,16 @@ public class ClientConnection {
         boolean result=false;
 
         try{
+            //Applico SHA-256 alla password
+            MessageDigest md=MessageDigest.getInstance("SHA-256");
+            md.update(password.getBytes());
+            byte[] pw_digest=md.digest();
+            StringBuffer hexString = new StringBuffer();
+            for (int i = 0;i<pw_digest.length;i++) {
+                hexString.append(Integer.toHexString(0xFF & pw_digest[i]));
+            }
+            password=hexString.toString();
+
             Registry reg= LocateRegistry.getRegistry(RMIport);
             r_obj=reg.lookup("DatabaseService");
             s_obj=(DatabaseInterface) r_obj;
@@ -93,6 +105,20 @@ public class ClientConnection {
             setMsgAlert("Error 803: non valid password");
             return false;
         }
+        try {
+            //Applico SHA-256 alla password
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(password.getBytes());
+            byte[] pw_digest = md.digest();
+            StringBuffer hexString = new StringBuffer();
+            for (int i = 0; i < pw_digest.length; i++) {
+                hexString.append(Integer.toHexString(0xFF & pw_digest[i]));
+            }
+            password = hexString.toString();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
         //Setto la richiesta per il login
         String request = "LOGIN " +nickname+ " "+password;
         sendRequest(request);
@@ -211,9 +237,10 @@ public class ClientConnection {
         sendRequest(request);
         //Mi metto in attesa della risposta dal server
         String answer = receiveResponse();
-        if(answer.contains("Error"))
+        if(answer.contains("Error")) {
             setMsgAlert(answer);
-        answer="";
+            answer=null;
+        }
         return answer;
     }
 
