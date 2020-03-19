@@ -36,16 +36,15 @@ public class LogController {
             message.setText("Close and reopen the application");
         }
         else{
-            message.setText("Now Login");
+            message.setText("Now log to play");
         }
         try{
             Thread.sleep(3000);
-            message.setText("");
-            nickname.clear();
-            password.clear();
         }catch(InterruptedException ie){
             ie.printStackTrace();
         }
+        nickname.clear();
+        password.clear();
     }
 
     @FXML

@@ -25,15 +25,17 @@ public class GameController {
     @FXML
     public void sendWord(ActionEvent click){
         msg=wordfield.getText();
-        clientGui.clientConnection.sendNewWord(msg);
-        lblword.setText("");
-        wordfield.clear();
-        String word=clientGui.clientConnection.receiveNewWord();
-        lblword.setText(word);
-        //Stampa di debug
-        System.out.println(word);
-        if(word.contains("Time's up") || word.contains("You have finished"))
-            clientGui.launchResultGui();
+        if(!msg.equals("")) {
+            lblword.setText("");
+            clientGui.clientConnection.sendNewWord(msg);
+            wordfield.clear();
+            String word = clientGui.clientConnection.receiveNewWord();
+            lblword.setText(word);
+            //Stampa di debug
+            System.out.println(word);
+            if (word.contains("Time's up") || word.contains("You have finished"))
+                clientGui.launchResultGui();
+        }
     }
 
 
