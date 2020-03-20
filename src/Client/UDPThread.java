@@ -64,13 +64,29 @@ public class UDPThread extends Thread {
                     ButtonType accept = new ButtonType("Accept");
                     ButtonType deny = new ButtonType("Deny");
 
+                    Thread t=new Thread(new Runnable() {
+                        @Override
+                        public void run(){
+                            try {
+                                Thread.sleep(30000);
+
+                                if (notify.isShowing())
+                                    Platform.runLater(() -> notify.close());
+                            } catch (InterruptedException ie) {
+                                ie.printStackTrace();
+                            }
+                        }
+                    });
+                    t.setDaemon(true);
+                    t.start();
+
                     notify.getButtonTypes().setAll(accept,deny);
                     Optional<ButtonType> result = notify.showAndWait();
 
                     if(result.get()==accept){
                         setResponse("yes");
                         try {
-                            FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("./GUI/Main.fxml"));
+                            FXMLLoader loader = new FXMLLoader(getClass().getClassLoader().getResource("./Client/GUI/Main.fxml"));
                             Parent root = loader.load();
                             MainController controller = loader.getController();
                             controller.waitTime(clientGui);
@@ -79,19 +95,6 @@ public class UDPThread extends Thread {
                         }
                     } else
                         setResponse("no");
-
-                    Thread t=new Thread(()->{
-                        try {
-                            Thread.sleep(30000);
-                        } catch (InterruptedException ie) {
-                            ie.printStackTrace();
-                        }
-                        if (notify.isShowing()) {
-                            notify.close();
-                            setResponse("no");
-                        }
-                    });
-                    t.start();
                 }
             });
         }
