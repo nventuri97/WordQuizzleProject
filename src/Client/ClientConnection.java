@@ -168,7 +168,7 @@ public class ClientConnection {
      * @return risposta del server se positiva, null altrimenti
      */
     public String addFriends(String nickAmico){
-        if(nickAmico==null || nickAmico=="")
+        if(nickAmico==null || nickAmico.equals(""))
             setMsgAlert("Error 801: non valid nickname");
         else{
             //Compongo la richiesta TCP
@@ -228,7 +228,7 @@ public class ClientConnection {
     }
 
     public String newGame(String friend){
-        if(friend==null || friend=="") {
+        if(friend==null || friend.equals("")) {
             setMsgAlert("Error 801: non valid nickname");
             return null;
         }
