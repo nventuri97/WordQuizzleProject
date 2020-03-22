@@ -65,6 +65,7 @@ public class UDPThread extends Thread {
                     ButtonType deny = new ButtonType("Deny");
                     notify.getButtonTypes().setAll(accept,deny);
 
+                    //Per poter invocare la close() deve essere per forza presente il button cancel
                     notify.getButtonTypes().add(ButtonType.CANCEL);
                     notify.hide();
                     notify.getButtonTypes().remove(ButtonType.CANCEL);
