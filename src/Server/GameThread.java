@@ -58,7 +58,7 @@ public class GameThread extends Thread {
         this.endGaming=false;
         gd1=new GamerData();
         gd2=new GamerData();
-        this.userClosed=new AtomicInteger();
+        this.userClosed=new AtomicInteger(0);
         this.timer=Executors.newScheduledThreadPool(1);
     }
 
@@ -120,6 +120,8 @@ public class GameThread extends Thread {
                 } catch (NullPointerException e) {
                     GamerData data=(GamerData) key.attachment();
                     String name=data.getUsername();
+                    if(userClosed.incrementAndGet()==2)
+                        endGaming=true;
                     if (name == gamer1) {
                         us1.addPunteggio(data.getPunti());
                     } else {
@@ -127,6 +129,7 @@ public class GameThread extends Thread {
                     }
                     try {
                         key.channel().close();
+                        key.cancel();
                     } catch (IOException ioe) {
                         ioe.printStackTrace();
                     }
@@ -208,6 +211,8 @@ public class GameThread extends Thread {
                         translation.replace(".", "");
                     else if(translation.endsWith("!"))
                         translation.replace("!","");
+                    else if(translation.endsWith("?"))
+                        translation.replace("?", "");
                     //Trasformo tutte le lettere in minuscole
                     translation.toLowerCase();
                     System.out.println(translation);
@@ -336,6 +341,8 @@ public class GameThread extends Thread {
                 System.out.println("Client " + client + " is crashed");
                 key.channel().close();
                 key.cancel();
+                if(userClosed.incrementAndGet()==2)
+                    endGaming=true;
                 //Ho letto tutto quello che c'era da leggere
             } else if (len < 1024) {
                 answer += StandardCharsets.UTF_8.decode(buffer).toString();
