@@ -57,12 +57,17 @@ public class UDPThread extends Thread {
             Platform.runLater(new Runnable() {
                 @Override
                 public void run() {
-                    Alert notify=new Alert(Alert.AlertType.INFORMATION);
+                    Alert notify=new Alert(Alert.AlertType.CONFIRMATION);
                     notify.setTitle("Challenge request");
                     notify.setHeaderText(substring[3]+" ask you to join a new match");
                     notify.setContentText("Answer accept/deny: ");
                     ButtonType accept = new ButtonType("Accept");
                     ButtonType deny = new ButtonType("Deny");
+                    notify.getButtonTypes().setAll(accept,deny);
+
+                    notify.getButtonTypes().add(ButtonType.CANCEL);
+                    notify.hide();
+                    notify.getButtonTypes().remove(ButtonType.CANCEL);
 
                     Thread t=new Thread(new Runnable() {
                         @Override
@@ -70,8 +75,9 @@ public class UDPThread extends Thread {
                             try {
                                 Thread.sleep(30000);
 
-                                if (notify.isShowing())
-                                    Platform.runLater(() -> notify.close());
+                                if (notify.isShowing()) {
+                                    Platform.runLater(() ->notify.close());
+                                }
                             } catch (InterruptedException ie) {
                                 ie.printStackTrace();
                             }
@@ -80,7 +86,6 @@ public class UDPThread extends Thread {
                     t.setDaemon(true);
                     t.start();
 
-                    notify.getButtonTypes().setAll(accept,deny);
                     Optional<ButtonType> result = notify.showAndWait();
 
                     if(result.get()==accept){
