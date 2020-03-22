@@ -1,5 +1,6 @@
 package Client;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -20,6 +21,10 @@ public class ClientGui extends Application {
         root = loader.load();
         clientConnection=new ClientConnection(this);
         stage=primaryStage;
+        stage.setOnCloseRequest(e -> {
+            Platform.exit();
+            System.exit(0);
+        });
 
         //Set LogController
         logController = loader.getController();
