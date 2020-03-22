@@ -139,11 +139,11 @@ public class GameThread extends Thread {
         pt2=gd2.getPunti();
         //Se la traduzione va a buon fine faccio cominciare la sfida
         if (pt1 > pt2) {
-            sendMessage("You won " + pt1 + " to " + pt2 + ". Receive 3 bonus point", sock1);
+            sendMessage("You won " + pt1 + " to " + pt2 + " You receive 3 bonus point", sock1);
             sendMessage("You lose " + pt1 + " to " + pt2, sock2);
             pt1 += 3;
         } else if (pt2 > pt1) {
-            sendMessage("You won " + pt2 + " to " + pt2 + ". Receive 3 bonus point", sock2);
+            sendMessage("You won " + pt2 + " to " + pt1 + " You receive 3 bonus point", sock2);
             sendMessage("You lose " + pt2 + " to " + pt1, sock1);
             pt2+= 3;
         } else {
