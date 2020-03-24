@@ -194,16 +194,15 @@ public class GameThread extends Thread {
                 String word=kparole.get(i);
                 URL site = new URL("https://api.mymemory.translated.net/get?q="+word+"&langpair=it|en");
                 HttpURLConnection connection=(HttpURLConnection) site.openConnection();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String result=reader.readLine();
                 //Stampa di debug
                 System.out.println(connection.getResponseCode());
                 if(connection.getResponseCode()!=200){
                     sendMessage("Something is gone wrong, we are sorry", sock1);
                     sendMessage("Something is gone wrong, we are sorry", sock2);
-                    connection.disconnect();
                     return false;
                 }else {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    String result=reader.readLine();
                     Parser parser=new Parser();
                     String translation=parser.readWordTranslate(result);
                     //Nel caso in cui la parola abbia come terminazione un carattere di punteggiatura lo elimino
@@ -220,7 +219,11 @@ public class GameThread extends Thread {
                     System.out.println(translation);
                     t.add(i, translation);
                 }
-                connection.disconnect();
+            }catch(IOException io){
+                //Stampa di debug
+                System.out.println("Sono dentro IOException");
+                sendMessage("Something is gone wrong, we are sorry", sock1);
+                sendMessage("Something is gone wrong, we are sorry", sock2);
             }catch(Exception e){
                 e.printStackTrace();
             }
