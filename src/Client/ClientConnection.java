@@ -298,17 +298,23 @@ public class ClientConnection {
         //Stampa di debug
         System.out.println("Aspetto la porta");
         String answer=receiveResponse();
-        String[] substring=answer.split("\\s+");
+        if(answer.contains("Game port")){
+            String[] substring=answer.split("\\s+");
 
-        int port=Integer.parseInt(substring[2]);
-        //Stringa di debug
-        System.out.println(port);
-        try {
-            GameSock = SocketChannel.open(new InetSocketAddress("localhost", port));
-        }catch(IOException ioe){
-            ioe.printStackTrace();
+            int port=Integer.parseInt(substring[2]);
+            //Stringa di debug
+            System.out.println(port);
+            try {
+                GameSock = SocketChannel.open(new InetSocketAddress("localhost", port));
+            }catch(IOException ioe){
+                ioe.printStackTrace();
+            }
+            firstWord=true;
+        } else {
+            //Stampa di debug
+            System.out.println("Sono qui qualcosa andato storto");
+            setMsgAlert(answer);
         }
-        firstWord=true;
     }
 
     /**
@@ -347,7 +353,5 @@ public class ClientConnection {
         }catch (IOException ioe){
             ioe.printStackTrace();
         }
-        //Stampa di debug
-        System.out.println("Ho inviato "+len+" di "+message);
     }
 }

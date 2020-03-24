@@ -103,8 +103,12 @@ public class MainController {
     public void waitTime(ClientGui cGui){
         clientGui=cGui;
         clientGui.clientConnection.newGameConnection();
-        String word=clientGui.clientConnection.receiveNewWord();
-        clientGui.launchGameGUI(word);
+        if(clientGui.clientConnection.getMsgAlert().equals("")) {
+            String word = clientGui.clientConnection.receiveNewWord();
+            clientGui.launchGameGUI(word);
+        }else{
+            lblscore.setText(clientGui.clientConnection.getMsgAlert());
+        }
     }
 
 
