@@ -70,91 +70,91 @@ public class GameThread extends Thread {
             e.printStackTrace();
         }
 
-        //Prendo la nuova porta su cui è aperta la gameSocket e la invio ai due client
-        int newPort=gameSockChannel.socket().getLocalPort();
-        sendMessage("Game port "+newPort, sock1);
-        sendMessage("Game port "+newPort, sock2);
-
         //Creo un'ArrayList contenente il dizionario e poi seleziono le K parole
         ArrayList<String> dictionary=gson.fromJson(reader, ArrayList.class);
         kparole=getKWord(dictionary, k);
-        getTranslation(translation, kparole, k);
+        if(getTranslation(translation, kparole, k)) {
+            //Prendo la nuova porta su cui è aperta la gameSocket e la invio ai due client
+            int newPort = gameSockChannel.socket().getLocalPort();
+            sendMessage("Game port " + newPort, sock1);
+            sendMessage("Game port " + newPort, sock2);
 
-        //Prelevo le due istanze della classe User dal database
-        us1 = database.getUser(gamer1);
-        us2 = database.getUser(gamer2);
+            //Prelevo le due istanze della classe User dal database
+            us1 = database.getUser(gamer1);
+            us2 = database.getUser(gamer2);
 
-        timer.schedule(this::timeUP, 60, TimeUnit.SECONDS);
+            timer.schedule(this::timeUP, 60, TimeUnit.SECONDS);
 
-        while(!endGaming) {
-            try{
-                selector.select();
-            }catch (IOException ioe){
-                ioe.printStackTrace();
-            }
-            Set<SelectionKey> readyKeys = selector.selectedKeys();
-            iterator = readyKeys.iterator();
-
-            while (iterator.hasNext()) {
-                SelectionKey key = iterator.next();
-                iterator.remove();
-
+            while (!endGaming) {
                 try {
-                    if (key.isAcceptable()) {
-                        ServerSocketChannel server = (ServerSocketChannel) key.channel();
-                        //Creo una active socket derivata dalla accept sulla passive socket su cui il server è in ascolto
-                        SocketChannel client = server.accept();
-                        System.out.println("Client " + client + " accepted");
-                        //Setto a non-blocking
-                        client.configureBlocking(false);
-                        GamerData data=new GamerData();
-                        //Aggiungo la key del client
-                        client.register(selector, SelectionKey.OP_WRITE, data);
-                    } else if (key.isWritable()) {
-                        writeWord(key);
-                    } else if (key.isReadable()) {
-                        readWord(key);
-                    }
+                    selector.select();
                 } catch (IOException ioe) {
                     ioe.printStackTrace();
-                } catch (NullPointerException e) {
-                    GamerData data=(GamerData) key.attachment();
-                    String name=data.getUsername();
-                    if(userClosed.incrementAndGet()==2)
-                        endGaming=true;
-                    if (name == gamer1) {
-                        us1.addPunteggio(data.getPunti());
-                    } else {
-                        us2.addPunteggio(data.getPunti());
-                    }
+                }
+                Set<SelectionKey> readyKeys = selector.selectedKeys();
+                iterator = readyKeys.iterator();
+
+                while (iterator.hasNext()) {
+                    SelectionKey key = iterator.next();
+                    iterator.remove();
+
                     try {
-                        key.channel().close();
-                        key.cancel();
+                        if (key.isAcceptable()) {
+                            ServerSocketChannel server = (ServerSocketChannel) key.channel();
+                            //Creo una active socket derivata dalla accept sulla passive socket su cui il server è in ascolto
+                            SocketChannel client = server.accept();
+                            System.out.println("Client " + client + " accepted");
+                            //Setto a non-blocking
+                            client.configureBlocking(false);
+                            GamerData data = new GamerData();
+                            //Aggiungo la key del client
+                            client.register(selector, SelectionKey.OP_WRITE, data);
+                        } else if (key.isWritable()) {
+                            writeWord(key);
+                        } else if (key.isReadable()) {
+                            readWord(key);
+                        }
                     } catch (IOException ioe) {
                         ioe.printStackTrace();
+                    } catch (NullPointerException e) {
+                        GamerData data = (GamerData) key.attachment();
+                        String name = data.getUsername();
+                        if (userClosed.incrementAndGet() == 2)
+                            endGaming = true;
+                        if (name == gamer1) {
+                            us1.addPunteggio(data.getPunti());
+                        } else {
+                            us2.addPunteggio(data.getPunti());
+                        }
+                        try {
+                            key.channel().close();
+                            key.cancel();
+                        } catch (IOException ioe) {
+                            ioe.printStackTrace();
+                        }
                     }
                 }
             }
-        }
 
-        int pt1, pt2;
-        pt1=gd1.getPunti();
-        pt2=gd2.getPunti();
-        //Se la traduzione va a buon fine faccio cominciare la sfida
-        if (pt1 > pt2) {
-            sendMessage("You won " + pt1 + " to " + pt2 + " You receive 3 bonus point", sock1);
-            sendMessage("You lose " + pt1 + " to " + pt2, sock2);
-            pt1 += 3;
-        } else if (pt2 > pt1) {
-            sendMessage("You won " + pt2 + " to " + pt1 + " You receive 3 bonus point", sock2);
-            sendMessage("You lose " + pt2 + " to " + pt1, sock1);
-            pt2+= 3;
-        } else {
-            sendMessage("You drew " + pt1 + " to " + pt2, sock1);
-            sendMessage("You drew " +pt2+ " to " + pt1, sock2);
+            int pt1, pt2;
+            pt1 = gd1.getPunti();
+            pt2 = gd2.getPunti();
+            //Se la traduzione va a buon fine faccio cominciare la sfida
+            if (pt1 > pt2) {
+                sendMessage("You won " + pt1 + " to " + pt2 + " You receive 3 bonus point", sock1);
+                sendMessage("You lose " + pt2 + " to " + pt1, sock2);
+                pt1 += 3;
+            } else if (pt2 > pt1) {
+                sendMessage("You won " + pt2 + " to " + pt1 + " You receive 3 bonus point", sock2);
+                sendMessage("You lose " + pt1 + " to " + pt2, sock1);
+                pt2 += 3;
+            } else {
+                sendMessage("You drew " + pt1 + " to " + pt2, sock1);
+                sendMessage("You drew " + pt2 + " to " + pt1, sock2);
+            }
+            us1.addPunteggio(pt1);
+            us2.addPunteggio(pt2);
         }
-        us1.addPunteggio(pt1);
-        us2.addPunteggio(pt2);
         us1.setBusy();
         us2.setBusy();
     }
@@ -196,6 +196,8 @@ public class GameThread extends Thread {
                 HttpURLConnection connection=(HttpURLConnection) site.openConnection();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 String result=reader.readLine();
+                //Stampa di debug
+                System.out.println(connection.getResponseCode());
                 if(connection.getResponseCode()!=200){
                     sendMessage("Something is gone wrong, we are sorry", sock1);
                     sendMessage("Something is gone wrong, we are sorry", sock2);
@@ -276,7 +278,7 @@ public class GameThread extends Thread {
                 key.interestOps(SelectionKey.OP_READ);
                 key.attach(data);
             } else {
-                String message = "You have finished, wait to see game result";
+                String message = "You have finished";
                 buffer = ByteBuffer.wrap(message.getBytes());
                 client.write(buffer);
                 buffer.clear();
