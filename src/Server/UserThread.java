@@ -193,6 +193,7 @@ public class UserThread extends Thread {
             //Prelevo dal db la porta UDP dell'amico a cui devo collegarmi per inviare la richiesta
             int port = db.getUDPport(friend_nick);
             try {
+                db.setBusy(nickname);
                 //Setto la richiesta di sfida
                 String s = "NEW game from " + nickname;
                 byte[] request= s.getBytes();
@@ -216,7 +217,6 @@ public class UserThread extends Thread {
                     if(answer.contains("yes")) {
                         sentResponse("Game accepted, it's starting");
                         //Setto i due utenti a busy così che non possano ricevere altre richieste di sfida
-                        db.setBusy(nickname);
                         db.setBusy(friend_nick);
                         ServerSocketChannel socketChannel=ServerSocketChannel.open();
                         socketChannel.bind(new InetSocketAddress(0));
@@ -224,9 +224,12 @@ public class UserThread extends Thread {
                         //Creo e avvio il thread per la gestione della partita
                         GameThread gt=new GameThread(db, nickname, friend_nick, socketChannel);
                         gt.start();
-                    } else
+                    } else {
+                        db.setBusy(nickname);
                         sentResponse("Game denied");
+                    }
                 } catch (SocketTimeoutException ste) {
+                    db.setBusy(nickname);
                     sentResponse("Game denied");
                 }
 
