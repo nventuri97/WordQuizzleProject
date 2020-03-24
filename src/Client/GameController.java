@@ -11,7 +11,10 @@ public class GameController {
     private String msg;
     private Label lblword;
     private TextField wordfield;
+    @FXML
     private Button sendWord;
+    @FXML
+    private Button ok;
     public void setClientGui(ClientGui client){
         clientGui=client;
     }
@@ -33,9 +36,20 @@ public class GameController {
             lblword.setText(word);
             //Stampa di debug
             System.out.println(word);
-            if (word.contains("Time's up") || word.contains("You have finished"))
-                clientGui.launchResultGui();
+            if (word.contains("Time's up") || word.contains("You have finished")) {
+                sendWord.setDisable(true);
+                sendWord.setVisible(false);
+                ok.setVisible(true);
+                ok.setDisable(false);
+            }
         }
+    }
+
+    @FXML
+    public void ok(ActionEvent click){
+        ok.setDisable(true);
+        ok.setOpacity(0.5);
+        clientGui.launchResultGui();
     }
 
 
