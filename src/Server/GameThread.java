@@ -189,21 +189,25 @@ public class GameThread extends Thread {
      * @return true se la traduzione è arrivata a buon fine, false altrimenti
      */
     public boolean getTranslation(ArrayList<String> t, ArrayList<String> kparole, int k){
+        Parser parser=new Parser();
+        BufferedReader reader;
         for(int i=0;i<k;i++) {
             try {
                 String word=kparole.get(i);
                 URL site = new URL("https://api.mymemory.translated.net/get?q="+word+"&langpair=it|en");
                 HttpURLConnection connection=(HttpURLConnection) site.openConnection();
+                connection.setRequestMethod("GET");
                 //Stampa di debug
                 System.out.println(connection.getResponseCode());
                 if(connection.getResponseCode()!=200){
+                    //Stampa di debug
+                    System.out.println("Sono dentro il ramo then");
                     sendMessage("Something is gone wrong, we are sorry", sock1);
                     sendMessage("Something is gone wrong, we are sorry", sock2);
                     return false;
                 }else {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                     String result=reader.readLine();
-                    Parser parser=new Parser();
                     String translation=parser.readWordTranslate(result);
                     //Nel caso in cui la parola abbia come terminazione un carattere di punteggiatura lo elimino
                     if(translation.endsWith(","))
@@ -219,13 +223,12 @@ public class GameThread extends Thread {
                     System.out.println(translation);
                     t.add(i, translation);
                 }
-            }catch(IOException io){
+            }catch(IOException ioe){
                 //Stampa di debug
                 System.out.println("Sono dentro IOException");
                 sendMessage("Something is gone wrong, we are sorry", sock1);
                 sendMessage("Something is gone wrong, we are sorry", sock2);
-            }catch(Exception e){
-                e.printStackTrace();
+                return false;
             }
         }
         return true;
@@ -281,7 +284,7 @@ public class GameThread extends Thread {
                 key.interestOps(SelectionKey.OP_READ);
                 key.attach(data);
             } else {
-                String message = "You have finished";
+                String message = "You have finished, wait to see game result";
                 buffer = ByteBuffer.wrap(message.getBytes());
                 client.write(buffer);
                 buffer.clear();
@@ -306,7 +309,7 @@ public class GameThread extends Thread {
             }
         } else {
             try {
-                String s="Time's up, game finished";
+                String s="Time's up, game finished, wait to see game result";
                 buffer=ByteBuffer.wrap(s.getBytes());
                 client.write(buffer);
                 if(name.equals(gamer1))
