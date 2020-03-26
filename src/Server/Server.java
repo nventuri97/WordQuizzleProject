@@ -39,7 +39,9 @@ public class Server {
         }
         queue=new LinkedBlockingQueue<>();
         executor=new ThreadPoolExecutor(50, 100, 320000, TimeUnit.MILLISECONDS, queue);
+        System.out.println("************************************************");
         System.out.println("Server online");
+        System.out.println("************************************************");
 
         try {
             //Socket passiva su cui mi metto in ascolto

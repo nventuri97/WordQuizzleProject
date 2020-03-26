@@ -107,7 +107,7 @@ public class MainController {
             String word = clientGui.clientConnection.receiveNewWord();
             clientGui.launchGameGUI(word);
         }else{
-            lblscore.setText(clientGui.clientConnection.getMsgAlert());
+            clientGui.feedback.showAlert(Alert.AlertType.ERROR, "Game Error", clientGui.clientConnection.getMsgAlert());
         }
     }
 

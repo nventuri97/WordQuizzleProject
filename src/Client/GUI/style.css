@@ -10,7 +10,7 @@
     -fx-background-image: url("./logo3.PNG");
 }
 
-#add_friend, #login, #sign_up, #new_game, #friends, #score, #ranking, #logout, #clear, #sendWord, #home {
+#add_friend, #login, #sign_up, #new_game, #friends, #score, #ranking, #logout, #clear, #sendWord, #home, #ok {
     -fx-background-color: rgb(255, 255, 255);
     -fx-background-radius: 50px;
     -fx-font-family: Ranchers;
@@ -32,12 +32,30 @@
     -fx-font-size: 15px;
 }
 
-#message, #lblscore, #result{
+#message, #lblscore{
     -fx-text-alignment: center;
     -fx-font-family: Ranchers;
     -fx-font-size: 15px;
     -fx-text-fill: rgb(78, 77, 77);
 }
+
+#result1, #result3 {
+    -fx-font-family: Ranchers;
+    -fx-font-size: 30px;
+    -fx-text-fill: rgb(78, 77, 77);}
+
+#result2, #result4{
+    -fx-background-color: white;
+    -fx-background-radius: 50px;
+    -fx-border-style: solid;
+    -fx-border-color: rgb(78, 77, 77);
+    -fx-border-radius: 50px;
+    -fx-text-alignment: center;
+    -fx-font-family: Ranchers;
+    -fx-font-size: 45px;
+    -fx-text-fill: rgb(78, 77, 77);
+}
+
 #waiting{
     -fx-text-alignment: center;
     -fx-font-family: Ranchers;

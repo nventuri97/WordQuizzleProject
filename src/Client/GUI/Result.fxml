@@ -6,8 +6,11 @@
 
 <AnchorPane fx:id="AnchorPane4" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="800.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Client.ResultController">
    <children>
-      <AnchorPane fx:id="logo5" layoutX="237.0" layoutY="53.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="197.0" prefWidth="326.0" />
-      <Button fx:id="home" layoutX="563.0" layoutY="422.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#home" prefHeight="30.0" prefWidth="150.0" text="HOME" />
-      <Label fx:id="result" alignment="CENTER" layoutX="145.0" layoutY="275.0" prefHeight="50.0" prefWidth="511.0" />
+      <AnchorPane fx:id="logo5" layoutX="237.0" layoutY="23.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="197.0" prefWidth="326.0" />
+      <Button fx:id="home" layoutX="620.0" layoutY="435.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#home" prefHeight="30.0" prefWidth="150.0" text="HOME" />
+      <Label fx:id="result1" alignment="CENTER" layoutX="140.0" layoutY="425.0" prefHeight="50.0" prefWidth="448.0" />
+      <Label fx:id="result2" alignment="CENTER" layoutX="243.0" layoutY="241.0" prefHeight="171.0" prefWidth="88.0" />
+      <Label fx:id="result4" alignment="CENTER" layoutX="475.0" layoutY="241.0" prefHeight="171.0" prefWidth="88.0" />
+      <Label fx:id="result3" alignment="CENTER" layoutX="335.0" layoutY="302.0" prefHeight="50.0" prefWidth="131.0" />
    </children>
 </AnchorPane>

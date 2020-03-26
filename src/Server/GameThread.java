@@ -197,11 +197,8 @@ public class GameThread extends Thread {
                 URL site = new URL("https://api.mymemory.translated.net/get?q="+word+"&langpair=it|en");
                 HttpURLConnection connection=(HttpURLConnection) site.openConnection();
                 connection.setRequestMethod("GET");
-                //Stampa di debug
-                System.out.println(connection.getResponseCode());
+                System.out.println("Response code: "+connection.getResponseCode());
                 if(connection.getResponseCode()!=200){
-                    //Stampa di debug
-                    System.out.println("Sono dentro il ramo then");
                     sendMessage("Something is gone wrong, we are sorry", sock1);
                     sendMessage("Something is gone wrong, we are sorry", sock2);
                     return false;
@@ -224,8 +221,6 @@ public class GameThread extends Thread {
                     t.add(i, translation);
                 }
             }catch(IOException ioe){
-                //Stampa di debug
-                System.out.println("Sono dentro IOException");
                 sendMessage("Something is gone wrong, we are sorry", sock1);
                 sendMessage("Something is gone wrong, we are sorry", sock2);
                 return false;
@@ -274,7 +269,6 @@ public class GameThread extends Thread {
                 buffer = ByteBuffer.wrap(word.getBytes());
                 client.write(buffer);
 
-                //stampa di debug
                 System.out.println(word);
 
                 if (data.getIndWord() == k) {
@@ -288,18 +282,12 @@ public class GameThread extends Thread {
                 buffer = ByteBuffer.wrap(message.getBytes());
                 client.write(buffer);
                 buffer.clear();
-                //Stampa di debug
-                System.out.println(name + " gamer " + gamer1);
-                //Stampa di debug
-                System.out.println(name + " gamer " + gamer2);
                 if (name.equals(gamer1)) {
                     gd1 = data;
-                    //Stampa di debug
-                    System.out.println(gd1.getPunti());
+                    System.out.println(gamer1 + "finished his words");
                 } else if (name.equals(gamer2)) {
                     gd2 = data;
-                    //Stampa di debug
-                    System.out.println(gd2.getPunti());
+                    System.out.println(gamer2 + "finished his words");
                 }
                 //Se entrambi i giocatori hanno finito allora chiudo la partita
                 if (userClosed.incrementAndGet() == 2)

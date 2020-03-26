@@ -15,6 +15,7 @@
          </font>
       </Label>
       <TextField fx:id="wordfield" alignment="CENTER" layoutX="233.0" layoutY="345.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="335.0" promptText="Translation" />
-      <Button fx:id="sendWord" layoutX="325.0" layoutY="409.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#sendWord" prefHeight="30.0" prefWidth="150.0" text="SEND WORD" />
+      <Button fx:id="sendWord" layoutX="319.0" layoutY="394.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#sendWord" prefHeight="30.0" prefWidth="150.0" text="SEND WORD" />
+      <Button fx:id="ok" disable="true" layoutX="319.0" layoutY="440.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#ok" prefHeight="30.0" prefWidth="150.0" text="OK" visible="false" />
    </children>
 </AnchorPane>

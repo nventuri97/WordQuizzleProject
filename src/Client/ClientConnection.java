@@ -178,7 +178,7 @@ public class ClientConnection {
             //Mi metto in attesa della risposta del server
             String answer=receiveResponse();
             if(answer.contains("810")){
-                return ("Friend "+nickAmico+" is been correctly added");
+                return ("Friend "+nickAmico+" has been correctly added");
             } else {
                 setMsgAlert(answer);
             }
@@ -295,7 +295,6 @@ public class ClientConnection {
      * Setta la nuova connessione per la partita con GameSocket
      */
     public void newGameConnection(){
-        //Stampa di debug
         System.out.println("Aspetto la porta");
         String answer=receiveResponse();
         if(answer.contains("Game port")){
@@ -311,8 +310,6 @@ public class ClientConnection {
             }
             firstWord=true;
         } else {
-            //Stampa di debug
-            System.out.println("Sono qui qualcosa andato storto");
             setMsgAlert(answer);
         }
     }
@@ -347,9 +344,8 @@ public class ClientConnection {
             firstWord=false;
         }else
             buffer=ByteBuffer.wrap(word.getBytes());
-        int len=0;
         try {
-            len=GameSock.write(buffer);
+            GameSock.write(buffer);
         }catch (IOException ioe){
             ioe.printStackTrace();
         }

@@ -5,12 +5,19 @@ import java.util.Set;
 
 public class User {
 
+    //Nickname scelto dall'utente
     private String nickname;
+    //Immagine della password su cui è applicata SHA-256
     private String password;
+    //Lista di amici
     private Set<String> friends;
+    //Punteggio totale dell'utente
     private int punteggio;
+    //Booleano che indica se l'utente è online
     private transient boolean online;
+    //Booleano che indica se l'utente è impegnato in un'altra sfida
     private transient boolean busy;
+    //Socket TCP dell'utente
     private transient Socket TCPSocket;
 
     /**

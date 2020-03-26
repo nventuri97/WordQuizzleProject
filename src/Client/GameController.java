@@ -34,8 +34,6 @@ public class GameController {
             wordfield.clear();
             String word = clientGui.clientConnection.receiveNewWord();
             lblword.setText(word);
-            //Stampa di debug
-            System.out.println(word);
             if (word.contains("Time's up") || word.contains("You have finished")) {
                 sendWord.setDisable(true);
                 sendWord.setVisible(false);
